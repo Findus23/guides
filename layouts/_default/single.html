@@ -2,15 +2,25 @@
     {{ .Title }} &ndash; {{ .Site.Title }}
 {{ end }}
 {{ define "main" }}
+    <a href="/">Other guides</a>
     <article>
         <header>
             <h1>{{ .Title }}</h1>
-            {{ with .Params.author }}
-                <p class="author">{{ . }}</p>
-            {{ end }}
             {{ if (gt .Params.date 0) }}
-                <p class="date">{{ .Date.Format "2006-01-02" }} (last changed on {{ .Lastmod.Format "2006-01-02" }})</p>
+                <p>
+                    <span class="date">{{ .Date.Format "2006-01-02" }} (last changed on {{ .Lastmod.Format "2006-01-02" }})</span>
+                    {{ with .Params.author }}
+                        by <span class="author">{{ . }}</span>
+                    {{ end }}
+                </p>
+
             {{ end }}
+            <nav class="categories">
+                {{ range (.GetTerms "categories") }}
+                    <a href="{{ .Permalink }}">{{ .LinkTitle }}</a>
+                {{ end }}
+            </nav>
+            test
         </header>
         <aside>
             <div class="table-of-contents">

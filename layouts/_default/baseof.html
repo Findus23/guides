@@ -9,14 +9,23 @@
     {{ if .Description }}
         <meta name="description" content="{{ .Description }}">
     {{ end }}
+    {{ range .AlternativeOutputFormats -}}
+        {{ printf `<link rel="%s" type="%s" href="%s" title="%s" />` .Rel .MediaType.Type .Permalink $.Site.Title | safeHTML }}
+    {{ end -}}
     {{ $style := resources.Get "sass/main.scss" | resources.ToCSS | resources.Minify | resources.Fingerprint }}
     <link rel="stylesheet" href="{{ $style.Permalink }}" integrity="{{ $style.Data.Integrity }}">
+    {{ partial "matomo.html" . }}
+
 </head>
 <body>
-{{ block "main" . }}
-{{ end }}
-{{ block "footer" . }}
-{{ end }}
+<main>
+    {{ block "main" . }}
+    {{ end }}
+</main>
+<footer>
+    <a href="https://lw1.at/i/">Privacy Policy</a>
+    <a href="https://lw1.at/">My other projects</a>
+</footer>
 </body>
 </html>
 

@@ -6,6 +6,7 @@ a {
 }
 
 body {
+  font-family: serif;
   margin: 40px auto;
   max-width: 800px;
   line-height: 1.6;
@@ -14,8 +15,14 @@ body {
   padding: 0 10px
 }
 
-h1, h2, h3 {
-  line-height: 1.2
+main {
+  margin-bottom: 1rem;
+
+}
+
+h1, h2, h3, h4, h5 {
+  line-height: 1.2;
+  font-family: sans-serif;
 }
 
 code {
@@ -44,27 +51,55 @@ pre {
   border: 1px solid;
 
   a {
-    color: inherit;
+	color: inherit;
   }
 
   &.warning {
-    color: mix(black, $warning, 80%);
-    background: mix(white, $warning, 80%);
-    border-color: mix(white, $warning, 70%);
+	color: mix(black, $warning, 80%);
+	background: mix(white, $warning, 80%);
+	border-color: mix(white, $warning, 70%);
   }
+
   &.info {
-    color: mix(black, $info, 80%);
-    background: mix(white, $info, 80%);
-    border-color: mix(white, $info, 70%);
+	color: mix(black, $info, 80%);
+	background: mix(white, $info, 80%);
+	border-color: mix(white, $info, 70%);
   }
+
   &.danger {
-    color: mix(black, $danger, 80%);
-    background: mix(white, $danger, 80%);
-    border-color: mix(white, $danger, 70%);
+	color: mix(black, $danger, 80%);
+	background: mix(white, $danger, 80%);
+	border-color: mix(white, $danger, 70%);
   }
+
   &.success {
-    color: mix(black, $success, 80%);
-    background: mix(white, $success, 80%);
-    border-color: mix(white, $success, 70%);
+	color: mix(black, $success, 80%);
+	background: mix(white, $success, 80%);
+	border-color: mix(white, $success, 70%);
+  }
+}
+
+.cards {
+  .card {
+	padding: 1rem;
+	margin-bottom: 1rem;
+	border: solid 1px black;
+
+	h2 {
+	  margin-top: 0;
+	}
+  }
+}
+
+
+footer {
+  display: flex;
+  justify-content: space-between;;
+}
+
+figure {
+  img {
+	max-width: 100%;
+	height: auto;
   }
 }

@@ -1,16 +1,15 @@
 {{ define "main" }}
-    <h1>Guides</h1>
-    <ul>
+    <h1>{{.Title}}</h1>
+    <div class="cards">
         {{ $pages := .Pages }}
         {{ if .IsHome }}{{ $pages = .Site.RegularPages }}{{ end }}
         {{ range (where $pages "Section" "!=" "") }}
-            <li>
-                <span class="date">{{ .Date.Format "2006/01/02" }}</span>
-                <a href="{{ .RelPermalink }}">{{ .Title | markdownify }}</a>
+            <div class="card">
+                <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
                 <p>{{ safeHTML .Summary }}</p>
-            </li>
+            </div>
         {{ end }}
-    </ul>
+    </div>
 
 
 {{ end }}

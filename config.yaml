@@ -2,6 +2,7 @@ baseURL: 'https://guides.lw1.at/'
 languageCode: en-us
 title: guides.lw1.at
 enableGitInfo: true
+enableRobotsTXT: true
 markup:
   highlight:
     codeFences: true
@@ -17,19 +18,5 @@ markup:
     endLevel: 3
     ordered: false
     startLevel: 2
-menu:
-  main:
-    - name: Home
-      url: ""
-      weight: 1
-    - name: About
-      url: "about/"
-      weight: 2
-    - name: Categories
-      url: "categories/"
-      weight: 3
-    - name: Tags
-      url: "tags/"
-      weight: 4
-    - name: Subscribe
-      url: "index.xml"
+permalinks:
+  guide: /:title/

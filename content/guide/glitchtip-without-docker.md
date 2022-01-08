@@ -4,7 +4,7 @@ date: 2021-01-29
 categories: selfhosting
 author: Lukas Winkler
 cc_license: true
-description: "This is an example"
+description: "A quick guide on how to install GlitchTip without Docker"
 aliases:
 - /books/how-to-install-glitchtip-without-docker
 - /books/how-to-install-glitchtip-without-docker/page/prerequisites-93d
@@ -99,10 +99,7 @@ Don't forget to set the SECRET_KEY to a secret random string. This example assum
 
 Check [glitchtip.com/documentation/install#configuration](https://glitchtip.com/documentation/install#configuration) for more information about these options.
 
-{{< alert type="warning" >}}
-I know that always having to load the env file is not ideal, but I can't think of another way without code changes to glitchtip.
-{{< /alert >}}
-
+g
 ### Database migration 
 
 All of the following commands assume they are run as `glitchtip` user, using the `python` binary from the virtualenv (`/path/to/new/virtual/environment/bin/python`) and have the above environment variables loaded.

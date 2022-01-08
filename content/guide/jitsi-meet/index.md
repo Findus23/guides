@@ -6,7 +6,7 @@ author: Lukas Winkler
 cc_license: true
 description: "A quick guide on how to install Jitsi Meet on Debian or Ubuntu"
 aliases:
-- /books/how-to-install-jitsi-meet-on-debian-or-ubuntu
+  - /books/how-to-install-jitsi-meet-on-debian-or-ubuntu
   - /books/how-to-install-jitsi-meet-on-debian-or-ubuntu/page/prerequisites
   - /books/how-to-install-jitsi-meet-on-debian-or-ubuntu/page/adding-the-apt-repository
   - /books/how-to-install-jitsi-meet-on-debian-or-ubuntu/page/add-a-firewall-exception

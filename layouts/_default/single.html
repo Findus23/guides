@@ -1,0 +1,36 @@
+{{ define "title" }}
+    {{ .Title }} &ndash; {{ .Site.Title }}
+{{ end }}
+{{ define "main" }}
+    <article>
+        <header>
+            <h1>{{ .Title }}</h1>
+            {{ with .Params.author }}
+                <p class="author">{{ . }}</p>
+            {{ end }}
+            {{ if (gt .Params.date 0) }}
+                <p class="date">{{ .Date.Format "2006-01-02" }} (last changed on {{ .Lastmod.Format "2006-01-02" }})</p>
+            {{ end }}
+        </header>
+        <aside>
+            <div class="table-of-contents">
+                {{ partial "toc.html" . }}
+            </div>
+        </aside>
+        {{ .Content }}
+        {{ if not .Params.no_feedback }}
+            <div class="alert info">You have any feedback or ideas to improve this? Contact me on Social Media or <a
+                        href="mailto:guides@lw1.at">per E-Mail</a>. You can find my other projects at <a
+                        href="https://lw1.at/">lw1.at</a>.
+            </div>
+        {{ end }}
+        {{ if .Params.cc_license }}
+            <div class="alert info">
+                This guide is licensed under the
+                <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">
+                    Creative Commons Attribution-ShareAlike 4.0 International license</a>.
+            </div>
+        {{ end }}
+    </article>
+{{ end }}
+

@@ -1,0 +1,17 @@
+{{ define "main" }}
+    <h1>Guides</h1>
+    <ul>
+        {{ $pages := .Pages }}
+        {{ if .IsHome }}{{ $pages = .Site.RegularPages }}{{ end }}
+        {{ range (where $pages "Section" "!=" "") }}
+            <li>
+                <span class="date">{{ .Date.Format "2006/01/02" }}</span>
+                <a href="{{ .RelPermalink }}">{{ .Title | markdownify }}</a>
+                <p>{{ safeHTML .Summary }}</p>
+            </li>
+        {{ end }}
+    </ul>
+
+
+{{ end }}
+

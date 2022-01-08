@@ -1,14 +1,27 @@
 ---
 title: "How to install GlitchTip without Docker"
-date: 2022-01-08T17:55:11+01:00
-draft: true
+date: 2021-01-29
+categories: selfhosting
+author: Lukas Winkler
+cc_license: true
+description: "This is an example"
+aliases:
+- /books/how-to-install-glitchtip-without-docker
+- /books/how-to-install-glitchtip-without-docker/page/prerequisites-93d
+- /books/how-to-install-glitchtip-without-docker/page/basic-setup
+- /books/how-to-install-glitchtip-without-docker/page/set-up-backend
+- /books/how-to-install-glitchtip-without-docker/page/set-up-frontend
+- /books/how-to-install-glitchtip-without-docker/page/set-up-gunicorn
+- /books/how-to-install-glitchtip-without-docker/page/set-up-nginx
+- /books/how-to-install-glitchtip-without-docker/page/set-up-celery
 ---
 
 You like the error tracking sentry.io provides, you want to self-host it, but the setup takes up too many resources?
 Then https://glitchtip.com/ might be something for you. It is a FOSS reimplementation of the sentry backend with most important features.
-You can install it using docker following their guide (https://glitchtip.com/documentation/install), but if you like me like to install things from stretch without docker, then this guide might be for you.
+You can install it using docker following [their guide](https://glitchtip.com/documentation/install), but if you like me like to install things from stretch without docker, then this guide might be for you.
 
-# Prerequisites
+<!--more-->
+## Prerequisites
 
 - Python3
 - [poetry](https://python-poetry.org/)
@@ -24,19 +37,19 @@ This whole guide is more of a documentation of the way I set it up than a defini
 
 This guide was tested on 29-01-2021 on Debian stable using git hash 7d9de2949a5a38a8d1f98eeac0774db09be06e66
 
-# Basic Setup
+## Basic Setup
 
-## Download Code
+### Download Code
 
 - create an empty directory for glitchtip somewhere (e.g. `/srv/server/glitchtip`)
 - clone backend code: `git clone git@gitlab.com:glitchtip/glitchtip-backend.git code`
 
 
-## Create a Virtualenv
+### Create a Virtualenv
 
 If you use virtualenvwrapper something like `mkvirtualenv --python=python3 glitchtip` might work, otherwise you can create it with something like `python3 -m venv /path/to/new/virtual/environment`. Activate it (`workon glitchtip` or `source /path/to/new/virtual/environment/bin/activate`).
 
-## Install dependencies
+### Install dependencies
 
 ```bash
 cd code
@@ -45,27 +58,27 @@ poetry remove uWSGI
 poetry add gunicorn
 ```
 
-## Create Linux user
+### Create Linux user
 ```bash
 sudo adduser glitchtip --disabled-login
 ```
-## Create PostgreSQL user and database
+### Create PostgreSQL user and database
 ```bash
 sudo -u postgres createuser glitchtip
 sudo -u postgres createdb -O glitchtip glitchtip
 ```
 
-## Create runtime directory
+### Create runtime directory
 (this is just a directory where the glitchtip user has write permission and can place all kinds of files)
 ```bash
 cd /srv/server/glitchtip
 mkdir runtime
 ```
 
-# Set up backend
+## Set up backend
 
 
-## Create environment variable file
+### Create environment variable file
 
 ```bash
 cd /srv/server/glitchtip
@@ -86,9 +99,11 @@ Don't forget to set the SECRET_KEY to a secret random string. This example assum
 
 Check [glitchtip.com/documentation/install#configuration](https://glitchtip.com/documentation/install#configuration) for more information about these options.
 
-<p class="callout warning">I know that always having to load the env file is not ideal, but I can't think of another way without code changes to glitchtip.</p>
+{{< alert type="warning" >}}
+I know that always having to load the env file is not ideal, but I can't think of another way without code changes to glitchtip.
+{{< /alert >}}
 
-## Database migration 
+### Database migration 
 
 All of the following commands assume they are run as `glitchtip` user, using the `python` binary from the virtualenv (`/path/to/new/virtual/environment/bin/python`) and have the above environment variables loaded.
 
@@ -109,9 +124,9 @@ python manage.py migrate
 If you get any connection errors, check the `DATABASE_URL` above and if your PostgreSQL user exists.
 
 
-# Set up Frontend
+## Set up Frontend
 
-## Compile frontend
+### Compile frontend
 
 ```bash
 cd /srv/server/glitchtip
@@ -136,7 +151,7 @@ Afterwards create a code/static and code/media directory and change the owner to
 python manage.py collectstatic
 ```
 
-## Quick test
+### Quick test
 
 You should now be able to run
 ```bash
@@ -146,9 +161,9 @@ python manage.py runserver
 And access glitchtip using the returned URL (assuming there is no firewall blocking that port. When in doubt forward the port using SSH.
 
 
-# Set up Gunicorn
+## Set up Gunicorn
 
-## Create a config file
+### Create a config file
 
 ```bash
 cd /srv/server/glitchtip
@@ -166,7 +181,7 @@ workers = 3
 Check the [gunicorn docs](https://docs.gunicorn.org/en/stable/) for more options and recommendations about the amount of workers.
 
 
-## Create a gunicorn service
+### Create a gunicorn service
 
 ```bash
 sudoedit /etc/systemd/system/glitchtip.service
@@ -202,7 +217,7 @@ sudo systemctl enable glitchtip
 ```
 
 
-# Set up Nginx
+## Set up Nginx
 
 
 This depends a lot on your general Nginx setup, but there should be nothing special about this config file apart from redirecting API requests to gunicorn and static files to the `/static/` directory.
@@ -261,9 +276,9 @@ sudo nginx -t && sudo service nginx reload
 Now you should be able to use GlitchTip without issues in your browser (create a user and afterwards log in). But to complete the setup we also need to set up celery.
 
 
-# Set up Celery
+## Set up Celery
 
-## Set up Beat
+### Set up Beat
 
 ```bash
 sudoedit /etc/systemd/system/glitchtip-celery-beat.service
@@ -288,7 +303,7 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-## Set up one Worker
+### Set up one Worker
 
 ```bash
 sudoedit /etc/systemd/system/glitchtip-celery-worker.service
@@ -314,7 +329,7 @@ WantedBy=multi-user.target
 ```
 
 
-## start services
+### start services
 
 ```bash
 sudo systemctl daemon-reload

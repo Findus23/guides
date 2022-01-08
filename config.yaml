@@ -1,7 +1,7 @@
-baseURL: 'http://example.org/'
+baseURL: 'https://guides.lw1.at/'
 languageCode: en-us
 title: guides.lw1.at
-theme: hugo-xmin
+enableGitInfo: true
 markup:
   highlight:
     codeFences: true
@@ -11,8 +11,8 @@ markup:
     lineNos: false
     lineNumbersInTable: true
     tabWidth: 4
-    noClasses: true
-    style: github
+    noClasses: false
+    style: dracula
   tableOfContents:
     endLevel: 3
     ordered: false

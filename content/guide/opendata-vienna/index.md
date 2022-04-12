@@ -11,6 +11,7 @@ description: "A quick guide on how to use the Open Data published by the City of
 
 The city of Vienna publishes a lot of datasets under a free license ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de) and a large fraction of them are geospatial data (like the list of parking zones I use in my [parking app](https://lw1.at/en/kurzparkzonen)). 
 
+<!--more-->
 
 ## Direct download of (geo)JSON, CSV or shapefile data
 

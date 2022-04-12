@@ -130,7 +130,7 @@ cd /srv/server/glitchtip
 git clone https://gitlab.com/glitchtip/glitchtip-frontend.git frontend
 cd frontend
 npm install
-./node_modules/@angular/cli/bin/ng build --prod
+npm run build-prod
 ```
 
 This should create a `dist` directory with the frontend.

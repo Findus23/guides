@@ -2,8 +2,8 @@ server:
 	hugo server -D
 
 build:
-	rm -r public/
+	rm -fr public/
 	hugo
 
 publish:
-	rsync -aP public/ lw1.at:/var/www/guides/ --delete-after
+	rsync -aP public/ lw1.at:/var/www/guides/ --delete

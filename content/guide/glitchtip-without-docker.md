@@ -138,7 +138,7 @@ This should create a `dist` directory with the frontend.
 Now go back to the backend and create a symlink:
 ```bash
 cd ../code
-ln -s ../frontend/dist
+ln -s ../frontend/dist/glitchtip-frontend/ dist
 ```
 
 

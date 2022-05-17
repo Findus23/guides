@@ -1,6 +1,6 @@
 <figure>
     {{ with .Page.Resources.GetMatch (printf "*%s*" (.Get "src")) }}
-        <img src="{{ .Permalink }}" alt="test" width="{{ .Width }}" height="{{ .Height }}">
+        <img src="{{ .Permalink }}" width="{{ .Width }}" height="{{ .Height }}" loading="lazy">
     {{ end }}
     {{if .Get "title"}}
         <figcaption>{{ .Get "title" }}</figcaption>

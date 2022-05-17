@@ -35,9 +35,10 @@ pre {
   padding: 1em;
   overflow-x: auto;
   white-space: pre-wrap;
+  font-family: monospace, monospace;
 
   code {
-	background: none;
+    background: none;
   }
 }
 
@@ -51,43 +52,43 @@ pre {
   border: 1px solid;
 
   a {
-	color: inherit;
+    color: inherit;
   }
 
   &.warning {
-	color: mix(black, $warning, 80%);
-	background: mix(white, $warning, 80%);
-	border-color: mix(white, $warning, 70%);
+    color: mix(black, $warning, 80%);
+    background: mix(white, $warning, 80%);
+    border-color: mix(white, $warning, 70%);
   }
 
   &.info {
-	color: mix(black, $info, 80%);
-	background: mix(white, $info, 80%);
-	border-color: mix(white, $info, 70%);
+    color: mix(black, $info, 80%);
+    background: mix(white, $info, 80%);
+    border-color: mix(white, $info, 70%);
   }
 
   &.danger {
-	color: mix(black, $danger, 80%);
-	background: mix(white, $danger, 80%);
-	border-color: mix(white, $danger, 70%);
+    color: mix(black, $danger, 80%);
+    background: mix(white, $danger, 80%);
+    border-color: mix(white, $danger, 70%);
   }
 
   &.success {
-	color: mix(black, $success, 80%);
-	background: mix(white, $success, 80%);
-	border-color: mix(white, $success, 70%);
+    color: mix(black, $success, 80%);
+    background: mix(white, $success, 80%);
+    border-color: mix(white, $success, 70%);
   }
 }
 
 .cards {
   .card {
-	padding: 1rem;
-	margin-bottom: 1rem;
-	border: solid 1px black;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: solid 1px black;
 
-	h2 {
-	  margin-top: 0;
-	}
+    h2 {
+      margin-top: 0;
+    }
   }
 }
 
@@ -98,8 +99,12 @@ footer {
 }
 
 figure {
-  img {
-	max-width: 100%;
-	height: auto;
+  text-align: center;
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+    margin: auto;
+    display: block;
   }
 }

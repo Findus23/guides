@@ -1,0 +1,13 @@
+<figure>
+    <video {{if .Get "loop"}} autoplay loop {{else}} preload="metadata"{{ end }}muted controls playsinline>
+        {{ with .Page.Resources.GetMatch (printf "*%s*" (.Get "src_webm")) }}
+        <source src="{{ .Permalink }}" type="video/webm; codecs=vp9">
+        {{ end }}
+        {{ with .Page.Resources.GetMatch (printf "*%s*" (.Get "src_mp4")) }}
+            <source src="{{ .Permalink }}"  type="video/mp4">
+        {{ end }}
+    </video>
+    {{if .Get "title"}}
+    <figcaption>{{ .Get "title" }}</figcaption>
+    {{end}}
+</figure>

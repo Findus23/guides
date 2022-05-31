@@ -26,7 +26,8 @@ h1, h2, h3, h4, h5 {
 }
 
 code {
-  background: #f9f9f9;
+  @extend .chroma;
+  padding: 0 .2rem;
 }
 
 pre {
@@ -39,7 +40,15 @@ pre {
 
   code {
     background: none;
+    padding: 0;
   }
+
+  // .language-bash {
+  //   &::before {
+  //     content: "$ ";
+  //     color: #50fa7b;
+  //   }
+  // }
 }
 
 .table-of-contents {

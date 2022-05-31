@@ -139,11 +139,11 @@ A regular graphics card should be able to display millions of points in real-tim
 
 The major limitation of this visualisation is that it doesn't seem possible to use Point Gaussians as above using Paraview. You can read more about this [here](https://github.com/pyvista/pyvista/discussions/2576).
 
-{{<video src_webm="high_res1.webm" src_mp4="high_res1.webm"  >}}
-{{<video src_webm="high_res2.webm" src_mp4="high_res2.webm"  >}}
-
 
 ## Bonus: Exporting Videos for Publication
+{{<video src_webm="high_res1.webm" src_mp4="high_res1.mp4"  >}}
+{{<video src_webm="high_res2.webm" src_mp4="high_res2.mp4"  >}}
+
 
 Exporting Videos in Paraview and similar tools is rather easy, but the options are often quite limited and only support older formats and codecs. Therefore, the resulting videos can often be quite large and in low quality which is especially bad for point clouds where a lot of fine details can be lost in video compression.
 
@@ -173,7 +173,7 @@ Important options:
 - `out.webm` use WebM as a container format for the output file
 
 
-You might also want to add [`-row-mt=1`](https://groups.google.com/a/webmproject.org/g/codec-devel/c/oiHjgEdii2U) for more parallelisation if you have many CPU cores.
+You might also want to add [`-row-mt 1`](https://groups.google.com/a/webmproject.org/g/codec-devel/c/oiHjgEdii2U) for more parallelisation if you have many CPU cores.
 
 More information about the options can be found [here](https://sites.google.com/a/webmproject.org/wiki/ffmpeg/vp9-encoding-guide).
 

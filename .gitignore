@@ -1,11 +1,10 @@
 .idea/
 /public/
+/public.bak/
 /resources/_gen/
 /assets/jsconfig.json
 hugo_stats.json
 /.hugo_build.lock
 
 themes/
-*.mp4
-*.webm
 hugo

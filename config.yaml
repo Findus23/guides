@@ -19,4 +19,4 @@ markup:
     ordered: false
     startLevel: 2
 permalinks:
-  guide: /:title/
+  guide: /:slug/

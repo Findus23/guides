@@ -117,3 +117,19 @@ figure {
     display: block;
   }
 }
+
+
+a.heading-anchor {
+  position: absolute;
+  display: none;
+  left: -40px;
+  padding-right: 10px;
+  padding-left: 10px;
+  text-decoration: none;
+}
+h1,h2,h3,h4,h5,h6 {
+  position: relative;
+  &:hover a.heading-anchor {
+    display: block;
+  }
+}

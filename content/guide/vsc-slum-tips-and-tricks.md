@@ -1,10 +1,13 @@
 ---
-title: "VSC/Slurm Tips and Tricks"
+title: "VSC/Slurm/Spack Tips and Tricks"
+slug: vsc-slurm-spack-tips-and-tricks
 date: 2022-05-18
 categories: cheatsheet
 author: Lukas Winkler
 cc_license: true
 description: "An assorted list of tricks for using the Vienna Scientific Cluster"
+aliases:
+  - /vsc/slurm-tips-and-tricks/
 ---
 
 
@@ -21,6 +24,11 @@ This is not official documentation for the [Vienna Scientific Cluster](https://v
 
 ```bash
 salloc --ntasks=2 --mem=2G --time=01:00:00
+```
+
+Don't forget to then connect to the node you get assigned:
+```bash
+ssh n1234-567
 ```
 
 ## Storage
@@ -179,4 +187,186 @@ Host vsc4
 
 ```bash
 ssh vsc4
+```
+
+## Spack Modules
+
+([official docs](https://wiki.vsc.ac.at/doku.php?id=doku:spack), that this guide builds on. More useful tips can be found in the [spack documentation](https://spack.readthedocs.io/en/latest/))
+
+Software that is needed can be loaded via modules. The easiest way to find the right module for the current processor architecture, is directly querying `spack`, which is used to provide all compiled libraries and applications. There should never be a need to run `module` directly and doing so might accidentally pick libraries that are not intended for the current processor architecture.
+
+### Finding the right module
+
+The easiest way is using `spack find`.
+
+```bash
+$ spack find cmake
+```
+
+If you get a long output, you can ignore everything above the `==> N installed package(s)` line as it is unrelated to your current query. In case this only returns one module that fits your requirements, you can directly replace `spack find` with `spack load` to load this module.
+
+But most of the time, you will find multiple modules which differ in their properties (and `spack load` will fail if the query resolves to more than one package):
+
+```bash
+$ spack find cmake
+==> 4 installed packages
+-- linux-almalinux8-zen / gcc@8.5.0 -----------------------------
+cmake@3.21.4
+
+-- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
+cmake@3.21.4
+
+-- linux-almalinux8-zen3 / aocc@3.2.0 ---------------------------
+cmake@3.21.4
+
+-- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
+cmake@3.21.4
+```
+
+The most important property is the version and it is denoted with an `@` sign. Another property is the compiler the program or library was compiled with and it can be separated with a `%`.
+
+So if you want to load e.g. `cmake` version 3.x.x compiled with `gcc` version 11, you could directly search for it and subsequently load it.
+
+```bash
+$ spack find cmake@3%gcc@11
+$ spack load spack find cmake@3%gcc@11 
+```
+
+This way if another minor update of cmake is released, your command will load it. If you don't like this, check the next section.
+
+Sometimes there are also multiple variants of the same module. `spack info modulename` can give you an overview over all of them, but that doesn't mean that all combinations of variants/compilers/versions are offered at VSC. If you are for example interested in the `hdf5` library with MPI support, you can search for the following (`-v` gives you the exact properties of each module):
+
+```bash
+$ spack find -v hdf5 +mpi
+```
+
+### "Locking" modules
+
+If you dislike the fact that `spack load` queries don't resolve to specific packages, but just filters that describe the properties you want or prefer exactly specifying the version of a package for reproducibility, you can find the hash of package using `spack find -l` and can then use `/hash` to always refer to this exact package:
+
+```bash
+$ spack find -l gsl
+==> 1 installed package
+-- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
+4rhrhm3 gsl@2.7
+$ spack load /4rhrhm3
+```
+
+### Find currently loaded modules
+
+```bash
+# List all currently loaded packages
+$ spack find --loaded
+# Unload all currently loaded packages
+$ spack unload --all
+```
+
+### Avoiding broken programs due to loaded dependencies
+
+Loading a spack module not just loads the specified module, but also all dependencies of this module. With some modules like `openmpi` that dependency tree can be quite large.
+
+```bash
+$ spack find -d openmpi%gcc
+-- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
+openmpi@4.1.4
+    hwloc@2.6.0
+        libpciaccess@0.16
+        libxml2@2.9.12
+            libiconv@1.16
+            xz@5.2.5
+            zlib@1.2.11
+        ncurses@6.2
+    libevent@2.1.8
+        openssl@1.1.1l
+    numactl@2.0.14
+    openssh@8.7p1
+        libedit@3.1-20210216
+    pmix@3.2.1
+    slurm@22-05-2-1
+        curl@7.79.0
+        glib@2.70.0
+            gettext@0.21
+                bzip2@1.0.8
+                tar@1.34
+            libffi@3.3
+            pcre@8.44
+            perl@5.34.0
+                berkeley-db@18.1.40
+                gdbm@1.19
+                    readline@8.1
+            python@3.8.12
+                expat@2.4.1
+                    libbsd@0.11.3
+                        libmd@1.0.3
+                sqlite@3.36.0
+                util-linux-uuid@2.36.2
+        json-c@0.15
+        lz4@1.9.3
+        munge@0.5.14
+            libgcrypt@1.9.3
+                libgpg-error@1.42
+    ucx@1.12.1
+
+```
+
+And loading module like `openssl` or `ncurses` from spack means that programs that depend on those libraries, but the versions provided by the base operating system, will crash.
+```bash
+$ spack load openmpi%gcc
+$ nano somefile.txt
+Segmentation fault (core dumped)
+$ htop
+Segmentation fault (core dumped)
+```
+
+One can avoid this by unloading the affected modules afterwards.
+```bash
+spack unload ncurses
+spack unload openssl
+```
+
+But in many cases one doesn't need all dependency modules and is really just interested in e.g. `openmpi` itself. Therefore, one can ignore the dependencies with `--only package`.
+```bash
+# doesn't affect non-openmpi programs
+$ spack load --only package openmpi%gcc 
+```
+
+### Comparing modules
+
+Sometimes two packages look exactly the same:
+
+```bash
+$ spack find -vl fftw
+-- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
+mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
+```
+
+Then you can use `spack diff` to
+```bash
+$ spack diff /mmgor5w /cy5tkce
+```
+```diff
+--- fftw@3.3.10/mmgor5w3daiwtsdbyl4dfhjsueaciry2
++++ fftw@3.3.10/cy5tkcetpgx35rok2lqfi3d66rjptkva
+@@ depends_on @@
+-  fftw intel-oneapi-mpi build
++  fftw openmpi build
+[...]
+```
+
+Therefore, we know that in this example the first package depends on intel-oneapi-mpi and the second one on `openmpi`.
+
+
+### Debugging modules
+
+Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though )
+
+> To be updated
+
+
+### Commonly used modules
+
+This is a list of modules I commonly used. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
+
+```bash
+# To be updated
 ```

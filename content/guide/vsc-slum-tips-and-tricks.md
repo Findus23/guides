@@ -358,9 +358,20 @@ Therefore, we know that in this example the first package depends on intel-oneap
 
 ### Debugging modules
 
-Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though )
+Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though you loaded the module). Adding `--sh` to `spack load` prints out all commands that would be executed during the `module load` allowing you to understand what is going on.
 
-> To be updated
+```bash
+$ spack load --sh cmake%gcc@8
+export ACLOCAL_PATH=[...];
+export CMAKE_PREFIX_PATH=[...];
+export CPATH=[...];
+export LD_LIBRARY_PATH=[...];
+export LIBRARY_PATH=[...];
+export MANPATH=[...];
+export PATH=[...];
+export PKG_CONFIG_PATH=[...];
+export SPACK_LOADED_HASHES=[...];
+```
 
 
 ### Commonly used modules
@@ -368,5 +379,15 @@ Sometimes one needs to know what `spack load somepackage` does exactly (e.g. bec
 This is a list of modules I commonly used. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
 
 ```bash
-# To be updated
+spack load --only package openmpi@4%gcc@11.2
+spack load --only package fftw%gcc@11.2
+spack load --only package libtool%gcc@11.2 # GNU Autotools
+spack load --only package hdf5%gcc@11.2 +mpi
+spack load --only package numactl%gcc@11.2
+spack load --only package metis%gcc@11.2
+spack load --only package intel-tbb%gcc@11.2
+spack load --only package gsl%gcc@11.2
+spack load --only package cmake%gcc@11.2
+spack load --only package gcc@11.2
+spack load --only package python@3.11%gcc@11
 ```

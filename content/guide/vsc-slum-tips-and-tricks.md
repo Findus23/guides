@@ -72,14 +72,14 @@ Your job script is a regular bash script (`.sh` file). In addition, you can spec
 - `--job-name`: A short name for this job. It is often displayed truncated after a few characters.
 - `--mail-type=ALL`: notify on all events per E-Mail
 
-`--long-option=value` and `--long-option value` are equivalent.
+In these cases `--long-option=value` and `--long-option value` are equivalent.
 
 ### Single Core job
 
 Only specify `--ntask=1` and the amount of memory you need.
 
 ```
-#SBATCH --ntasks=1 # (also -n 1`
+#SBATCH --ntasks=1 # (also -n 1)
 #SBATCH --mem 2G
 ```
 
@@ -96,10 +96,10 @@ All options can be found in the [slurm documentation](https://slurm.schedmd.com/
 
 ### Useful Environment Variables
 
+- `$SLURM_JOB_NAME`
 - `$SLURM_NODELIST`
 - `$SLURM_NNODES`
 - `$SLURM_NPROCS`
-- `SLURM_JOB_NAME`
 
 Especially the latter can be used e.g. for running MPI programs with the requested number of CPU cores:
 
@@ -113,8 +113,7 @@ A job script can be submitted using
 ```bash
 sbatch jobfile.sh # you can also add sbatch options here
 ```
-You can also 
-As the `jobfile.sh` is a regular shell script, you can pass arguments like 
+Just like in regular shell scripts, you can pass arguments to `jobfile.sh` like this 
 
 ```bash
 sbatch jobfile.sh somevalue
@@ -136,7 +135,7 @@ Especially useful is the estimated start time of a scheduled job:
 squeue -u username --start
 ```
 
-A lot more information about scheduling including the calculated priority of the job can be found using [`sprio`](https://slurm.schedmd.com/sprio.html)
+A lot more information about scheduling including the calculated priority of jobs can be found using [`sprio`](https://slurm.schedmd.com/sprio.html)
 ```bash
 sprio -u lwinkler
 ```
@@ -159,11 +158,11 @@ Access to VSC is only possible from IP addresses of the partner universities. If
 
 To connect to the login server, the easiest thing is to put the config for the host in your `~/.ssh/config` (create it, if it doesn't yet exist).
 
-```ssh-config
+```bash
 Host loginUnivie
     HostName login.univie.ac.at
     User testuser12 # replace with your username
-    # the following are needed if you are using OpenSSH 8.8
+    # the following are needed if you are using OpenSSH 8.8 or newer
     # and the login server isn't yet updated to a never version
     HostkeyAlgorithms +ssh-rsa
     PubkeyAcceptedAlgorithms +ssh-rsa
@@ -177,16 +176,16 @@ ssh loginUnivie
 Then you can add another entry to `~/.ssh/config` for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created. 
 
 
-```ssh-config
-Host vsc4
-    Hostname vsc4.vsc.ac.at
+```bash
+Host vsc5
+    Hostname vsc5.vsc.ac.at
     User vscuser
     ProxyJump loginUnivie
     # Port 27 # (only use if you are using ssh keys)
 ```
 
 ```bash
-ssh vsc4
+ssh vsc5
 ```
 
 ## Spack Modules
@@ -229,7 +228,7 @@ So if you want to load e.g. `cmake` version 3.x.x compiled with `gcc` version 11
 
 ```bash
 $ spack find cmake@3%gcc@11
-$ spack load spack find cmake@3%gcc@11 
+$ spack load cmake@3%gcc@11 
 ```
 
 This way if another minor update of cmake is released, your command will load it. If you don't like this, check the next section.

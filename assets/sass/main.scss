@@ -1,8 +1,12 @@
 @import "variables";
 @import "syntax";
+@import "font";
 
 a {
   color: $green;
+  code {
+    text-decoration: none;
+  }
 }
 
 body {
@@ -27,7 +31,16 @@ h1, h2, h3, h4, h5 {
 
 code {
   @extend .chroma;
-  padding: 0 .2rem;
+  //padding: 0 .2rem;
+}
+
+code::selection, .chroma ::selection {
+  background: #f8f8f2;
+  color: #272822;
+}
+
+code {
+  font-family: "Fira Code", monospace, monospace;
 }
 
 pre {
@@ -36,7 +49,7 @@ pre {
   padding: 1em;
   overflow-x: auto;
   white-space: pre-wrap;
-  font-family: monospace, monospace;
+  font-family: "Fira Code", monospace, monospace;
 
   code {
     background: none;
@@ -127,8 +140,10 @@ a.heading-anchor {
   padding-left: 10px;
   text-decoration: none;
 }
-h1,h2,h3,h4,h5,h6 {
+
+h1, h2, h3, h4, h5, h6 {
   position: relative;
+
   &:hover a.heading-anchor {
     display: block;
   }

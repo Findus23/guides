@@ -23,12 +23,12 @@ This is not official documentation for the [Vienna Scientific Cluster](https://v
 ### Quick interactive session
 
 ```bash
-salloc --ntasks=2 --mem=2G --time=01:00:00
+➜ salloc --ntasks=2 --mem=2G --time=01:00:00
 ```
 
 Don't forget to then connect to the node you get assigned:
 ```bash
-ssh n1234-567
+➜ ssh n1234-567
 ```
 
 ## Storage
@@ -48,11 +48,11 @@ official docs:
 The file size and number of files is limited by group. The current status can be read using 
 
 ```bash
-mmlsquota --block-size auto -j data_fs00000 data
+➜ mmlsquota --block-size auto -j data_fs00000 data
 ```
 for $DATA and 
 ```bash
-mmlsquota --block-size auto -j home_fs00000 home
+➜ mmlsquota --block-size auto -j home_fs00000 home
 ```
 for $HOME where `00000` is the ID of the own project (accessible using `groups`)
 
@@ -62,7 +62,7 @@ for $HOME where `00000` is the ID of the own project (accessible using `groups`)
 
 Your job script is a regular bash script (`.sh` file). In addition, you can specify options to `sbatch` in the beginning of your file:
 
-```text
+```bash
 #!/bin/bash
 #SBATCH --job-name=somename
 #SBATCH --mail-type=ALL
@@ -78,7 +78,7 @@ In these cases `--long-option=value` and `--long-option value` are equivalent.
 
 Only specify `--ntask=1` and the amount of memory you need.
 
-```
+```bash
 #SBATCH --ntasks=1 # (also -n 1)
 #SBATCH --mem 2G
 ```
@@ -104,19 +104,19 @@ All options can be found in the [slurm documentation](https://slurm.schedmd.com/
 Especially the latter can be used e.g. for running MPI programs with the requested number of CPU cores:
 
 ```bash
-mpiexec -np $SLURM_NPROCS ./program
+➜ mpiexec -np $SLURM_NPROCS ./program
 ```
 
 ### Submitting Jobs
 
 A job script can be submitted using 
 ```bash
-sbatch jobfile.sh # you can also add sbatch options here
+➜ sbatch jobfile.sh # you can also add sbatch options here
 ```
 Just like in regular shell scripts, you can pass arguments to `jobfile.sh` like this 
 
 ```bash
-sbatch jobfile.sh somevalue
+➜ sbatch jobfile.sh somevalue
 ```
 
 and then access `somevalue` as `$1` in your script. This way multiple similar jobs can be submitted without needing to edit the jobscript.
@@ -126,18 +126,18 @@ and then access `somevalue` as `$1` in your script. This way multiple similar jo
 The current status of jobs in the Queue can be seen using [`squeue`](https://slurm.schedmd.com/squeue.html).
 
 ```bash
-squeue -u username
+➜ squeue -u username
 ```
 
 Especially useful is the estimated start time of a scheduled job:
 
 ```bash
-squeue -u username --start
+➜ squeue -u username --start
 ```
 
 A lot more information about scheduling including the calculated priority of jobs can be found using [`sprio`](https://slurm.schedmd.com/sprio.html)
 ```bash
-sprio -u username
+➜ sprio -u username
 ```
 
 This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF).
@@ -146,7 +146,7 @@ This will also show the reason why the job is still queued for which an explanat
 Details about past Jobs (like maximum memory usage), can be found using [`sacct`](https://slurm.schedmd.com/sacct.html). You can manually specify the needed columns or display most of them using `--long`
 
 ```bash
-sacct -j 2052157 --long 
+➜ sacct -j 2052157 --long 
 ```
 
 ## SSH login via login.univie.ac.at
@@ -170,7 +170,7 @@ Host loginUnivie
 
 This way you should now be able to connect to the login server using
 ```bash
-ssh loginUnivie
+➜ ssh loginUnivie
 ```
 
 Then you can add another entry to `~/.ssh/config` for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created. 
@@ -185,7 +185,7 @@ Host vsc5
 ```
 
 ```bash
-ssh vsc5
+➜ ssh vsc5
 ```
 
 ## Spack Modules
@@ -199,7 +199,7 @@ Software that is needed can be loaded via modules. The easiest way to find the r
 The easiest way is using `spack find`.
 
 ```bash
-$ spack find cmake
+➜ spack find cmake
 ```
 
 If you get a long output, you can ignore everything above the `==> N installed package(s)` line as it is unrelated to your current query. In case this only returns one module that fits your requirements, you can directly replace `spack find` with `spack load` to load this module.
@@ -207,7 +207,7 @@ If you get a long output, you can ignore everything above the `==> N installed p
 But most of the time, you will find multiple modules which differ in their properties (and `spack load` will fail if the query resolves to more than one package):
 
 ```bash
-$ spack find cmake
+➜ spack find cmake
 ==> 4 installed packages
 -- linux-almalinux8-zen / gcc@8.5.0 -----------------------------
 cmake@3.21.4
@@ -227,8 +227,8 @@ The most important property is the version and it is denoted with an `@` sign. A
 So if you want to load e.g. `cmake` version 3.x.x compiled with `gcc` version 11, you could directly search for it and subsequently load it.
 
 ```bash
-$ spack find cmake@3%gcc@11
-$ spack load cmake@3%gcc@11 
+➜ spack find cmake@3%gcc@11
+➜ spack load cmake@3%gcc@11 
 ```
 
 This way if another minor update of cmake is released, your command will load it. If you don't like this, check the next section.
@@ -236,7 +236,7 @@ This way if another minor update of cmake is released, your command will load it
 Sometimes there are also multiple variants of the same module. `spack info modulename` can give you an overview over all of them, but that doesn't mean that all combinations of variants/compilers/versions are offered at VSC. If you are for example interested in the `hdf5` library with MPI support, you can search for the following (`-v` gives you the exact properties of each module):
 
 ```bash
-$ spack find -v hdf5 +mpi
+➜ spack find -v hdf5 +mpi
 ```
 
 ### "Locking" modules
@@ -244,7 +244,7 @@ $ spack find -v hdf5 +mpi
 If you dislike the fact that `spack load` queries don't resolve to specific packages, but just filters that describe the properties you want or prefer exactly specifying the version of a package for reproducibility, you can find the hash of package using `spack find -l` and can then use `/hash` to always refer to this exact package:
 
 ```bash
-$ spack find -l gsl
+➜ spack find -l gsl
 ==> 1 installed package
 -- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
 4rhrhm3 gsl@2.7
@@ -255,9 +255,9 @@ $ spack load /4rhrhm3
 
 ```bash
 # List all currently loaded packages
-$ spack find --loaded
+➜ spack find --loaded
 # Unload all currently loaded packages
-$ spack unload --all
+➜ spack unload --all
 ```
 
 ### Avoiding broken programs due to loaded dependencies
@@ -265,7 +265,7 @@ $ spack unload --all
 Loading a spack module not just loads the specified module, but also all dependencies of this module. With some modules like `openmpi` that dependency tree can be quite large.
 
 ```bash
-$ spack find -d openmpi%gcc
+➜ spack find -d openmpi%gcc
 -- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
 openmpi@4.1.4
     hwloc@2.6.0
@@ -310,23 +310,23 @@ openmpi@4.1.4
 
 And loading module like `openssl` or `ncurses` from spack means that programs that depend on those libraries, but the versions provided by the base operating system, will crash.
 ```bash
-$ spack load openmpi%gcc
-$ nano somefile.txt
+➜ spack load openmpi%gcc
+➜ nano somefile.txt
 Segmentation fault (core dumped)
-$ htop
+➜ htop
 Segmentation fault (core dumped)
 ```
 
 One can avoid this by unloading the affected modules afterwards.
 ```bash
-spack unload ncurses
-spack unload openssl
+➜ spack unload ncurses
+➜ spack unload openssl
 ```
 
 But in many cases one doesn't need all dependency modules and is really just interested in e.g. `openmpi` itself. Therefore, one can ignore the dependencies with `--only package`.
 ```bash
 # doesn't affect non-openmpi programs
-$ spack load --only package openmpi%gcc 
+➜ spack load --only package openmpi%gcc 
 ```
 
 ### Comparing modules
@@ -334,14 +334,14 @@ $ spack load --only package openmpi%gcc
 Sometimes two packages look exactly the same:
 
 ```bash
-$ spack find -vl fftw
+➜ spack find -vl fftw
 -- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
 mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
 ```
 
 Then you can use `spack diff` to
 ```bash
-$ spack diff /mmgor5w /cy5tkce
+➜ spack diff /mmgor5w /cy5tkce
 ```
 ```diff
 --- fftw@3.3.10/mmgor5w3daiwtsdbyl4dfhjsueaciry2
@@ -360,7 +360,7 @@ Therefore, we know that in this example the first package depends on intel-oneap
 Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though you loaded the module). Adding `--sh` to `spack load` prints out all commands that would be executed during the `module load` allowing you to understand what is going on.
 
 ```bash
-$ spack load --sh cmake%gcc@8
+➜ spack load --sh cmake%gcc@8
 export ACLOCAL_PATH=[...];
 export CMAKE_PREFIX_PATH=[...];
 export CPATH=[...];

@@ -19,7 +19,7 @@ This guide assumes that you will download the source to `~/php/source` and insta
 If you are using Debian/Ubuntu, you need to have the build-essentials installed.
 
 ```bash
-➜  sudo apt install build-essential
+➜ sudo apt install build-essential
 ```
 
 ## Fetching source
@@ -27,10 +27,10 @@ If you are using Debian/Ubuntu, you need to have the build-essentials installed.
 The names of the directories of course change depending on which version of PHP you are installing
 
 ```bash
-➜  cd ~/php/source
-➜  wget https://downloads.php.net/~ramsey/php-8.1.0beta2.tar.gz
-➜  tar xzf php-8.1.0beta2.tar.gz
-➜  rm php-8.1.0beta2.tar.gz
+➜ cd ~/php/source
+➜ wget https://downloads.php.net/~ramsey/php-8.1.0beta2.tar.gz
+➜ tar xzf php-8.1.0beta2.tar.gz
+➜ rm php-8.1.0beta2.tar.gz
 ```
 
 ## Configuration and Building
@@ -82,26 +82,26 @@ This should enable all PHP modules [Matomo](https://matomo.org/) needs to run. I
 
 Now run this script:
 ```bash
-➜  chmod +x build.sh
-➜  ./build.sh
+➜ chmod +x build.sh
+➜ ./build.sh
 ```
 
 Afterwards we can start compiling PHP:
 ```bash
-➜  make
+➜ make
 # or if you want to use 6 processes in parallel 
-➜  make -j 6
+➜ make -j 6
 ```
 
 You can now optionally run the tests (don't worry if a few of them fail in beta versions)
 
 ```bash
-➜  make test
+➜ make test
 ```
 
 And the last step is to install PHP to our `INSTALL_DIR`:
 ```bash
-➜  make install
+➜ make install
 ```
 
 ## Run php-cli
@@ -109,9 +109,9 @@ And the last step is to install PHP to our `INSTALL_DIR`:
 You can now run php-cli from `~/php/php8/bin/php` and also start the built-in server:
 
 ```bash
-➜  echo "<?php var_dump('Hello World!');" | ~/php/php8/bin/php 
+➜ echo "<?php var_dump('Hello World!');" | ~/php/php8/bin/php 
 string(12) "Hello World!"
-➜  ~/php/php8/bin/php -S localhost:1234
+➜ ~/php/php8/bin/php -S localhost:1234
 ```
 
 If this is enough for you, you can stop here.
@@ -122,9 +122,9 @@ Otherwise, continue with setting up php-fpm.
 If you want to use the compiled PHP version from your webserver (e.g. Apache or Nginx), you need to use php-fpm.
 
 ```bash
-➜  cd ~/php/php8
-➜  cp etc/php-fpm.conf.default etc/php-fpm.conf
-➜  cp etc/php-fpm.d/www.conf.default etc/php-fpm.d/www.conf
+➜ cd ~/php/php8
+➜ cp etc/php-fpm.conf.default etc/php-fpm.conf
+➜ cp etc/php-fpm.d/www.conf.default etc/php-fpm.d/www.conf
 # adapt the two config files if needed
 ```
 If you want to improve performance, you might want to increase `pm.max_children`, `pm.start_servers` and `pm.max_spare_servers`.
@@ -141,7 +141,7 @@ memory_limit = 512M
 
 Now you can start php-fpm using
 ```bash
-➜  ~/php/php8/sbin/php-fpm --nodaemonize
+➜ ~/php/php8/sbin/php-fpm --nodaemonize
 ```
 
 php-fpm will be listening on port 9000 by default.

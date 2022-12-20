@@ -61,13 +61,13 @@ deb https://download.jitsi.org stable/
 Afterwards add the GPG key with
 
 ```bash
-wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
+➜ wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
 ```
 
 and update the repository with
 
 ```bash
-sudo apt-get update
+➜ sudo apt-get update
 ```
 
 ## Add a firewall exception
@@ -76,9 +76,9 @@ If you are using `ufw` or another firewall software, you need to add an exceptio
 UDP port 10000:
 
 ```bash
-sudo ufw allow 443/tcp # this is probably already allowed if you are runnning a webserver
-sudo ufw allow 4443/tcp
-sudo ufw allow 10000/udp
+➜ sudo ufw allow 443/tcp # this is probably already allowed if you are runnning a webserver
+➜ sudo ufw allow 4443/tcp
+➜ sudo ufw allow 10000/udp
 ```
 
 ## Prepare the Let's Encrypt certificate
@@ -87,7 +87,7 @@ The easiest way to set up HTTPS is by creating the SSL certificates beforehand. 
 this by running e.g.
 
 ```bash
-sudo certbot certonly -d jitsi.yourdomain.example
+➜ sudo certbot certonly -d jitsi.yourdomain.example
 ```
 
 ## Run the installer
@@ -96,7 +96,7 @@ At this point you can start the jitsi setup. At this point either Nginx or Apach
 configure everything correctly.
 
 ```bash
-apt-get -y install jitsi-meet
+➜ sudo apt-get -y install jitsi-meet
 ```
 
 In the first step, the installer will ask for the domain where you want to install Jitsi: `jitsi.yourdomain.example`.
@@ -134,14 +134,15 @@ org.ice4j.ice.harvest.NAT_HARVESTER_PUBLIC_ADDRESS=<Public.IP.Address>
 
 (thanks to [kuketz-blog.de](https://www.kuketz-blog.de/kurzanleitung-jitsi-meet-videokonferenz-per-browser-oder-app/) for the idea)
 
-By default Jitsi uses the STUN server by Google to set up a connection.
+By default, Jitsi uses the STUN server by Google to set up a connection.
 If you don't want this, you can replace the list of STUN servers in the `/etc/jitsi/meet/jitsi.yourdomain.example-config.js`:
 
 ```javascript
 stunServers: [
     { urls: 'stun:stun.t-online.de:3478' },
     { urls: 'stun:stun.1und1.de:3478' }, 
-    { urls: 'stun:stun.easybell.de:3478' },],
+    { urls: 'stun:stun.easybell.de:3478' },
+],
 ```
 
 
@@ -213,7 +214,7 @@ var config = {
 
         // When using authentication, domain for guest users.
         anonymousdomain: 'guest.jitsi.yourdomain.example',
-      [...]
+        // [...]
     }
 }
 ```
@@ -228,8 +229,8 @@ org.jitsi.jicofo.auth.URL=XMPP:jitsi.yourdomain.example
 After every config is set, we can restart `jicofo` and `prosody`
 
 ```bash
-sudo systemctl restart prosody.service
-sudo systemctl restart jicofo.service
+➜ sudo systemctl restart prosody.service
+➜ sudo systemctl restart jicofo.service
 ```
 
 
@@ -237,7 +238,7 @@ sudo systemctl restart jicofo.service
 
 And lastly we can create users using `prosodyctl`:
 ```bash
-prosodyctl register <username> jitsi-meet.example.com <password>
+➜ prosodyctl register <username> jitsi-meet.example.com <password>
 ```
 
 -----

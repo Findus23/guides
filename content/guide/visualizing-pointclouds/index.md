@@ -65,7 +65,7 @@ While Paraview is very powerful, often it is useful to display a subset of data 
 For this we are using [vtk](https://vtk.org/) which Paraview is based on. As the [Python VTK wrapper](https://vtk.org/doc/nightly/html/md__builds_gitlab_kitware_sciviz_ci_Documentation_Doxygen_PythonWrappers.html) is not always very user-friendly, the best solution is [pyvista](pyvista.org), which abstracts many of [these details](https://docs.pyvista.org/examples/00-load/create-point-cloud.html) away.
 
 ```bash
-pip install pyvista
+➜ pip install pyvista
 # if you are using python3.10, you might need to read
 # https://github.com/pyvista/pyvista/discussions/2064
 ```
@@ -158,10 +158,10 @@ The following options are optimized for a high quality while still having a smal
 For the best results a two-pass encoding is used with the first command saving a temporary file and the second command actually encoding the file.
 
 ```bash
-ffmpeg -framerate 30 -i img.%04d.png -c:v libvpx-vp9 -pass 1 -b:v 3M  -speed 4 -tile-columns 6 -frame-parallel 1 -an -pix_fmt yuv420p -f webm -y /dev/null
+➜ ffmpeg -framerate 30 -i img.%04d.png -c:v libvpx-vp9 -pass 1 -b:v 3M  -speed 4 -tile-columns 6 -frame-parallel 1 -an -pix_fmt yuv420p -f webm -y /dev/null
 ```
 ```bash
-ffmpeg -framerate 30 -i img.%04d.png -c:v libvpx-vp9 -pass 2 -b:v 3M  -speed 1 -tile-columns 6 -frame-parallel 1 -auto-alt-ref 1 -lag-in-frames 25 -pix_fmt yuv420p -f webm -y out.webm
+➜ ffmpeg -framerate 30 -i img.%04d.png -c:v libvpx-vp9 -pass 2 -b:v 3M  -speed 1 -tile-columns 6 -frame-parallel 1 -auto-alt-ref 1 -lag-in-frames 25 -pix_fmt yuv420p -f webm -y out.webm
 ```
 
 Important options:
@@ -185,7 +185,7 @@ Here, instead of constraining the bitrate, we use a Constant Rate Factor (CRF) t
 It can go from 0 to 51 with a lower value indicating a higher quality. Values around 20 might be a good starting range. 
 
 ```bash
-ffmpeg -framerate 30 -i img.%04d.png -vcodec h264 -b:v 1M -strict -2 -pix_fmt yuv420p -preset veryslow -crf 20 -movflags +faststart -y out.mp4
+➜ ffmpeg -framerate 30 -i img.%04d.png -vcodec h264 -b:v 1M -strict -2 -pix_fmt yuv420p -preset veryslow -crf 20 -movflags +faststart -y out.mp4
 ```
 
 ### Display in browsers

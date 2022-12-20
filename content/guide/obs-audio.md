@@ -36,7 +36,7 @@ This guide is mostly an extended summary of [https://obsproject.com/forum/resour
 First we want to take a look at all output channels (or `sinks`):
 
 ```bash
-➜  ~ pactl list short sinks
+➜ pactl list short sinks
 1       alsa_output.pci-0000_1f_00.3.iec958-stereo      module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 2       alsa_output.pci-0000_1d_00.1.hdmi-stereo-extra1 module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 3       bluez_sink.38_18_4C_BE_25_8B.a2dp_sink  module-bluez5-device.c  s16le 2ch 44100Hz       RUNNING
@@ -51,14 +51,14 @@ In case the naming isn't as obvious in your case, you can look at `pavucontrol` 
 A null sink is a output channel that doesn't correspond to a hardware device. Later we will use it to tell OBS to only stream audio from this channel.
 
 ```bash
-➜  ~ pactl load-module module-null-sink
+➜ pactl load-module module-null-sink
 28
 ```
 As `null` is an ugly name, we will set this channel's description to `OBS` (so this is what `pavucontrol` and your desktop environments audio settings will show you).
 
 ```bash
-➜  ~ pacmd update-sink-proplist null device.description=OBS
-➜  ~ pactl list short sinks
+➜ pacmd update-sink-proplist null device.description=OBS
+➜ pactl list short sinks
 1       alsa_output.pci-0000_1f_00.3.iec958-stereo      module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 2       alsa_output.pci-0000_1d_00.1.hdmi-stereo-extra1 module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 3       bluez_sink.38_18_4C_BE_25_8B.a2dp_sink  module-bluez5-device.c  s16le 2ch 44100Hz       RUNNING
@@ -73,13 +73,13 @@ To solve this, we can create a combine-sink to redirect the audio to both channe
 
 
 ```bash
-➜  ~ pactl list short sinks
+➜ pactl list short sinks
 1       alsa_output.pci-0000_1f_00.3.iec958-stereo      module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 2       alsa_output.pci-0000_1d_00.1.hdmi-stereo-extra1 module-alsa-card.c      s16le 2ch 44100Hz       SUSPENDED
 3       bluez_sink.38_18_4C_BE_25_8B.a2dp_sink  module-bluez5-device.c  s16le 2ch 44100Hz       RUNNING
 4       null    module-null-sink.c      s16le 2ch 44100Hz       SUSPENDED
 
-➜  ~ pactl load-module module-combine-sink slaves=3,4
+➜ pactl load-module module-combine-sink slaves=3,4
 30
 ```
 

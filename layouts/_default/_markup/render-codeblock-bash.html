@@ -1,0 +1,10 @@
+{{ $class := .Attributes.class | default ""    }}
+{{ $lang  := .Attributes.lang  | default .Type }}
+{{ if transform.CanHighlight $lang }}
+{{ $highlighted := highlight .Inner $lang }}
+<div class="{{ $class }}">
+    {{ replace $highlighted "➜ " "<span class='shell'>➜ </span>" | safeHTML  }}
+</div>
+{{else}}
+<pre><code class="{{ $class }}">{{.Inner}}</code></pre>
+{{end}}

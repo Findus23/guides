@@ -52,27 +52,27 @@ If you use virtualenvwrapper something like `mkvirtualenv --python=python3 glitc
 ### Install dependencies
 
 ```bash
-cd code
-poetry install
-poetry remove uWSGI
-poetry add gunicorn
+➜ cd code
+➜ poetry install
+➜ poetry remove uWSGI
+➜ poetry add gunicorn
 ```
 
 ### Create Linux user
 ```bash
-sudo adduser glitchtip --disabled-login
+➜ sudo adduser glitchtip --disabled-login
 ```
 ### Create PostgreSQL user and database
 ```bash
-sudo -u postgres createuser glitchtip
-sudo -u postgres createdb -O glitchtip glitchtip
+➜ sudo -u postgres createuser glitchtip
+➜ sudo -u postgres createdb -O glitchtip glitchtip
 ```
 
 ### Create runtime directory
 (this is just a directory where the glitchtip user has write permission and can place all kinds of files)
 ```bash
-cd /srv/server/glitchtip
-mkdir runtime
+➜ cd /srv/server/glitchtip
+➜ mkdir runtime
 ```
 
 ## Set up backend
@@ -81,8 +81,8 @@ mkdir runtime
 ### Create environment variable file
 
 ```bash
-cd /srv/server/glitchtip
-nano env
+➜ cd /srv/server/glitchtip
+➜ nano env
 ```
 
 ```ini
@@ -99,23 +99,23 @@ Don't forget to set the SECRET_KEY to a secret random string. This example assum
 
 Check [glitchtip.com/documentation/install#configuration](https://glitchtip.com/documentation/install#configuration) for more information about these options.
 
-g
+
 ### Database migration 
 
 All of the following commands assume they are run as `glitchtip` user, using the `python` binary from the virtualenv (`/path/to/new/virtual/environment/bin/python`) and have the above environment variables loaded.
 
 One way to do this is to run
 ```bash
-sudo -u glitchtip bash
-export $(cat ../env | xargs) # repeat after editing env
-/srv/venv/glitchtip/bin/python manage.py THECOMMAND`
+➜ sudo -u glitchtip bash
+➜ export $(cat ../env | xargs) # repeat after editing env
+➜ /srv/venv/glitchtip/bin/python manage.py THECOMMAND`
 ```
 
 
 
 For the database migration run 
 ```bash
-python manage.py migrate
+➜ python manage.py migrate
 ```
 
 If you get any connection errors, check the `DATABASE_URL` above and if your PostgreSQL user exists.
@@ -126,33 +126,33 @@ If you get any connection errors, check the `DATABASE_URL` above and if your Pos
 ### Compile frontend
 
 ```bash
-cd /srv/server/glitchtip
-git clone https://gitlab.com/glitchtip/glitchtip-frontend.git frontend
-cd frontend
-npm install
-npm run build-prod
+➜ cd /srv/server/glitchtip
+➜ git clone https://gitlab.com/glitchtip/glitchtip-frontend.git frontend
+➜ cd frontend
+➜ npm install
+➜ npm run build-prod
 ```
 
 This should create a `dist` directory with the frontend.
 
 Now go back to the backend and create a symlink:
 ```bash
-cd ../code
-ln -s ../frontend/dist/glitchtip-frontend/ dist
+➜ cd ../code
+➜ ln -s ../frontend/dist/glitchtip-frontend/ dist
 ```
 
 
 
 Afterwards create a code/static and code/media directory and change the owner to `glitchtip`. Finally run
 ```bash
-python manage.py collectstatic
+➜ python manage.py collectstatic
 ```
 
 ### Quick test
 
 You should now be able to run
 ```bash
-python manage.py runserver
+➜ python manage.py runserver
 ```
 
 And access glitchtip using the returned URL (assuming there is no firewall blocking that port. When in doubt forward the port using SSH.
@@ -163,8 +163,8 @@ And access glitchtip using the returned URL (assuming there is no firewall block
 ### Create a config file
 
 ```bash
-cd /srv/server/glitchtip
-nano gunicorn.py
+➜ cd /srv/server/glitchtip
+➜ nano gunicorn.py
 ```
 
 ```python
@@ -181,7 +181,7 @@ Check the [gunicorn docs](https://docs.gunicorn.org/en/stable/) for more options
 ### Create a gunicorn service
 
 ```bash
-sudoedit /etc/systemd/system/glitchtip.service
+➜ sudoedit /etc/systemd/system/glitchtip.service
 ```
 
 ```ini
@@ -207,10 +207,10 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl start glitchtip
-sudo journalctl -u glitchtip
-sudo systemctl enable glitchtip
+➜ sudo systemctl daemon-reload
+➜ sudo systemctl start glitchtip
+➜ sudo journalctl -u glitchtip
+➜ sudo systemctl enable glitchtip
 ```
 
 
@@ -220,7 +220,7 @@ sudo systemctl enable glitchtip
 This depends a lot on your general Nginx setup, but there should be nothing special about this config file apart from redirecting API requests to gunicorn and static files to the `/static/` directory.
 
 ```bash
-sudoedit /etc/nginx/sites-available/glitchtip
+➜ sudoedit /etc/nginx/sites-available/glitchtip
 ```
 
 ```nginx
@@ -263,9 +263,9 @@ server {
 ```
 
 ```bash
-cd /etc/nginx/sites-enabled
-sudo ln -s ../sites-available/glitchtip
-sudo nginx -t && sudo service nginx reload
+➜ cd /etc/nginx/sites-enabled
+➜ sudo ln -s ../sites-available/glitchtip
+➜ sudo nginx -t && sudo service nginx reload
 ```
 
 -----
@@ -278,7 +278,7 @@ Now you should be able to use GlitchTip without issues in your browser (create a
 ### Set up Beat
 
 ```bash
-sudoedit /etc/systemd/system/glitchtip-celery-beat.service
+➜ sudoedit /etc/systemd/system/glitchtip-celery-beat.service
 ```
 
 ```ini
@@ -303,7 +303,7 @@ WantedBy=multi-user.target
 ### Set up one Worker
 
 ```bash
-sudoedit /etc/systemd/system/glitchtip-celery-worker.service
+➜ sudoedit /etc/systemd/system/glitchtip-celery-worker.service
 ```
 
 ```ini
@@ -329,12 +329,12 @@ WantedBy=multi-user.target
 ### start services
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl start glitchtip-celery-worker.service
-sudo journalctl -u glitchtip-celery-worker
-sudo systemctl start glitchtip-celery-beat.service
-sudo journalctl -u glitchtip-celery-beat
+➜ sudo systemctl daemon-reload
+➜ sudo systemctl start glitchtip-celery-worker.service
+➜ sudo journalctl -u glitchtip-celery-worker
+➜ sudo systemctl start glitchtip-celery-beat.service
+➜ sudo journalctl -u glitchtip-celery-beat
 
-sudo systemctl enable glitchtip-celery-worker.service
-sudo systemctl enable glitchtip-celery-beat.service
+➜ sudo systemctl enable glitchtip-celery-worker.service
+➜ sudo systemctl enable glitchtip-celery-beat.service
 ```

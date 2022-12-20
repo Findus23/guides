@@ -15,8 +15,6 @@
 {{- $sassOptions := (dict "outputStyle" "compressed" "enableSourceMap" true) }}
     {{ $style := resources.Get "sass/main.scss" | resources.ToCSS $sassOptions | resources.Fingerprint }}
     <link rel="stylesheet" href="{{ $style.Permalink }}" integrity="{{ $style.Data.Integrity }}">
-    {{ partial "matomo.html" . }}
-
 </head>
 <body>
 <main>
@@ -27,6 +25,9 @@
     <a href="https://lw1.at/i/">Privacy Policy</a>
     <a href="https://lw1.at/">My other projects</a>
 </footer>
+{{- $esBuildOptions := (dict "minify" true "sourceMap" "external") }}
+{{- $built := resources.Get "js/main.js" | js.Build $esBuildOptions | resources.Fingerprint }}
+<script src="{{ $built.RelPermalink }}" defer async integrity="{{ $built.Data.Integrity }}"></script>
 </body>
 </html>
 

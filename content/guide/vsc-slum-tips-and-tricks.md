@@ -137,7 +137,7 @@ squeue -u username --start
 
 A lot more information about scheduling including the calculated priority of jobs can be found using [`sprio`](https://slurm.schedmd.com/sprio.html)
 ```bash
-sprio -u lwinkler
+sprio -u username
 ```
 
 This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF).

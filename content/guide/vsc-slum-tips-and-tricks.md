@@ -378,10 +378,10 @@ export SPACK_LOADED_HASHES=[...];
 This is a list of modules I commonly used. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
 
 ```bash
-spack load --only package openmpi@4%gcc@11.2
+spack load --only package openmpi@4%gcc@11.2/rpec5sw
 spack load --only package fftw%gcc@11.2
 spack load --only package libtool%gcc@11.2 # GNU Autotools
-spack load --only package hdf5%gcc@11.2 +mpi
+spack load --only package hdf5%gcc@11.2/uglkavv # hdf5%gcc@11.2 +mpi
 spack load --only package numactl%gcc@11.2
 spack load --only package metis%gcc@11.2
 spack load --only package intel-tbb%gcc@11.2

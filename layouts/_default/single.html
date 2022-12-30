@@ -25,8 +25,9 @@
         {{ .Content }}
         {{ if not .Params.no_feedback }}
             <div class="alert info">You have any feedback or ideas to improve this? Contact me on Social Media or <a
-                        href="mailto:guides@lw1.at">per E-Mail</a>. You can find my other projects at <a
-                        href="https://lw1.at/">lw1.at</a>.
+                        href="mailto:guides@lw1.at">per E-Mail</a> or edit the
+                <a href="https://github.com/Findus23/guides/blob/main/content/{{ .File.Path }}" target="_blank">source</a> directly.
+                You can find my other projects at <a href="https://lw1.at/">lw1.at</a>.
             </div>
         {{ end }}
         {{ if .Params.cc_license }}

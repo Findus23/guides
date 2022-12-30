@@ -1,6 +1,6 @@
 {{ if or (gt .WordCount 400 ) (.Params.toc) }}
-    <div class="table-of-contents">
+    <aside class="table-of-contents">
         {{.TableOfContents}}
-    </div>
+    </aside>
 {{ end }}
 

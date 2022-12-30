@@ -4,6 +4,9 @@
 
 a {
   color: $green;
+  &:focus,&:active,&:hover{
+    color: darken($green,15%);
+  }
   code {
     text-decoration: none;
   }
@@ -135,7 +138,7 @@ figure {
 a.heading-anchor {
   position: absolute;
   display: none;
-  left: -40px;
+  left: -38px;
   padding-right: 10px;
   padding-left: 10px;
   text-decoration: none;
@@ -152,4 +155,20 @@ h1, h2, h3, h4, h5, h6 {
 .chroma .shell {
   user-select: none;
   color: #11D116;
+}
+
+nav.categories{
+  display: flex;
+  a {
+    margin: 0 5px;
+    padding: 3px;
+    background: $green;
+    &:focus,&:active,&:hover{
+      background: darken($green,15%);
+    }
+    color: white;
+    text-decoration: none;
+    //border-radius: ;
+  }
+
 }

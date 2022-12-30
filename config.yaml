@@ -20,3 +20,5 @@ markup:
     startLevel: 2
 permalinks:
   guide: /:slug/
+taxonomies:
+  category: categories

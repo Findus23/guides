@@ -140,7 +140,7 @@ A lot more information about scheduling including the calculated priority of job
 ➜ sprio -u username
 ```
 
-This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF).
+This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF) or the [VSC wiki](https://wiki.vsc.ac.at/doku.php?id=doku:slurm_job_reason_codes).
 
 
 Details about past Jobs (like maximum memory usage), can be found using [`sacct`](https://slurm.schedmd.com/sacct.html). You can manually specify the needed columns or display most of them using `--long`
@@ -153,7 +153,7 @@ Details about past Jobs (like maximum memory usage), can be found using [`sacct`
 
 [official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access) (but we are using the more modern ProxyJump instead of Agent forwarding as this way we don't have to trust the intermediate server with our private key)
 
-Access to VSC is only possible from IP addresses of the partner universities. If you are from the university of vienna and don't want to use the VPN, an SSH tunnel via `login.univie.ac.at` is an alternative.
+Access to VSC is only possible from IP addresses of the partner universities. If you are from the University of Vienna and don't want to use the VPN, an SSH tunnel via `login.univie.ac.at` is an alternative.
 
 
 To connect to the login server, the easiest thing is to put the config for the host in your `~/.ssh/config` (create it, if it doesn't yet exist).
@@ -168,12 +168,12 @@ Host loginUnivie
     PubkeyAcceptedAlgorithms +ssh-rsa
 ```
 
-This way you should now be able to connect to the login server using
+This way you should now be able to test connecting to the login server using
 ```bash
 ➜ ssh loginUnivie
 ```
 
-Then you can add another entry to `~/.ssh/config` for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created. 
+Then you can add another entry to `~/.ssh/config` on your computer for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created. 
 
 
 ```bash
@@ -375,7 +375,7 @@ export SPACK_LOADED_HASHES=[...];
 
 ### Commonly used modules
 
-This is a list of modules I commonly used. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
+This is a list of modules I commonly use. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
 
 ```bash
 spack load --only package openmpi@4%gcc@11.2/rpec5sw
@@ -387,6 +387,7 @@ spack load --only package metis%gcc@11.2
 spack load --only package intel-tbb%gcc@11.2
 spack load --only package gsl%gcc@11.2
 spack load --only package cmake%gcc@11.2
-spack load --only package gcc@11.2
+# spack load --only package gcc@11.2
+module load gcc/11.2.0-gcc-11.2.0-5i4t2bo
 spack load --only package python@3.11%gcc@11
 ```

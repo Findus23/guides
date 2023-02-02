@@ -121,7 +121,7 @@ Just like in regular shell scripts, you can pass arguments to `jobfile.sh` like 
 
 and then access `somevalue` as `$1` in your script. This way multiple similar jobs can be submitted without needing to edit the jobscript.
 
-## Queue
+### Queue
 
 The current status of jobs in the Queue can be seen using [`squeue`](https://slurm.schedmd.com/squeue.html).
 
@@ -147,6 +147,33 @@ Details about past Jobs (like maximum memory usage), can be found using [`sacct`
 
 ```bash
 ➜ sacct -j 2052157 --long 
+```
+
+## Advanced Slurm features
+
+### QoS, accounts and partitions
+
+Depending on access to private nodes, you might have access to many different QoS (*Quality of Service*), accounts and partitions.
+
+On VSC you can get an overview over your account with `sqos` (this is also shown on login):
+
+```bash
+➜ sqos -acc # this only works on VSC
+```
+
+If you want to a different account or QoS than your default (e.g. if you want to access private nodes or GPU nodes), you can specify them with `--qos` and `--acccount` in `salloc`, `sbatch` or your job script.
+
+You can also get an overview over all available partitions with `sinfo` and specify one explicitly with `--partition`.
+
+If you want to get a quick overview over the QoS at VSC and their current usage, you can use `sqos`.
+
+### Array Jobs
+
+Sometimes you might want to submit a larger number of similar jobs. This can be easily achieved using array jobs and the [`--array`](https://slurm.schedmd.com/sbatch.html#OPT_array) argument. With this, your job will be submitted multiple times with a different task ID that can be used from the `$SLURM_ARRAY_TASK_ID` environment variable.
+
+```bash
+#SBATCH --array=0-26
+./your_program $SLURM_ARRAY_TASK_ID
 ```
 
 ## SSH login via login.univie.ac.at

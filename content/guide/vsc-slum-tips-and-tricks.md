@@ -176,6 +176,12 @@ Sometimes you might want to submit a larger number of similar jobs. This can be 
 ./your_program $SLURM_ARRAY_TASK_ID
 ```
 
+{{< alert type="warning" >}}
+Keep in mind that each individual job should not be too small (more than just a few minutes) as otherwise the computational overhead of scheduling the job and starting it will not be worth it. In these cases using one job that runs the program in a loop will be more efficient.
+{{< /alert >}}
+
+
+
 ## SSH login via login.univie.ac.at
 
 [official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access) (but we are using the more modern ProxyJump instead of Agent forwarding as this way we don't have to trust the intermediate server with our private key)

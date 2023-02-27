@@ -412,14 +412,15 @@ This is a list of modules I commonly use. While it might not be directly usable 
 
 ```bash
 spack load --only package openmpi@4%gcc@11.2/rpec5sw
-spack load --only package fftw%gcc@11.2
+#spack load --only package fftw%gcc@11.2
+spack load --only package fftw@3.3.10%gcc@11.2/gjy2ay7
 spack load --only package libtool%gcc@11.2 # GNU Autotools
 spack load --only package hdf5%gcc@11.2/uglkavv # hdf5%gcc@11.2 +mpi
 spack load --only package numactl%gcc@11.2
 spack load --only package metis%gcc@11.2
 spack load --only package intel-tbb%gcc@11.2
 spack load --only package gsl%gcc@11.2
-spack load --only package cmake%gcc@11.2
+spack load --only package cmake@3.22%gcc@11.2
 # spack load --only package gcc@11.2
 module load gcc/11.2.0-gcc-11.2.0-5i4t2bo
 spack load --only package python@3.11%gcc@11

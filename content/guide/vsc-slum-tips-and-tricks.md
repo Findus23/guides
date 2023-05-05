@@ -19,7 +19,6 @@ This is not official documentation for the [Vienna Scientific Cluster](https://v
 
 **Always request an interactive session when running anything using a non-trivial amount of CPU power!**
 
-
 ### Quick interactive session
 
 ```bash
@@ -27,6 +26,7 @@ This is not official documentation for the [Vienna Scientific Cluster](https://v
 ```
 
 Don't forget to then connect to the node you get assigned:
+
 ```bash
 ➜ ssh n1234-567
 ```
@@ -39,21 +39,22 @@ official docs:
 - [storage](https://wiki.vsc.ac.at/doku.php?id=doku:storage)
 - [introduction-to-vsc:08_storage_infrastructure:storage_infrastructure](https://wiki.vsc.ac.at/doku.php?id=pandoc:introduction-to-vsc:08_storage_infrastructure:storage_infrastructure)
 
-
 `$HOME` is limited to 100 GB and storing/compiling code. Anything else should be stored at `$DATA`.
-
 
 ### Quota
 
-The file size and number of files is limited by group. The current status can be read using 
+The file size and number of files is limited by group. The current status can be read using
 
 ```bash
 ➜ mmlsquota --block-size auto -j data_fs00000 data
 ```
-for $DATA and 
+
+for $DATA and
+
 ```bash
 ➜ mmlsquota --block-size auto -j home_fs00000 home
 ```
+
 for $HOME where `00000` is the ID of the own project (accessible using `groups`)
 
 ## Job scripts
@@ -109,11 +110,13 @@ Especially the latter can be used e.g. for running MPI programs with the request
 
 ### Submitting Jobs
 
-A job script can be submitted using 
+A job script can be submitted using
+
 ```bash
 ➜ sbatch jobfile.sh # you can also add sbatch options here
 ```
-Just like in regular shell scripts, you can pass arguments to `jobfile.sh` like this 
+
+Just like in regular shell scripts, you can pass arguments to `jobfile.sh` like this
 
 ```bash
 ➜ sbatch jobfile.sh somevalue
@@ -202,6 +205,7 @@ Host loginUnivie
 ```
 
 This way you should now be able to test connecting to the login server using
+
 ```bash
 ➜ ssh loginUnivie
 ```
@@ -293,7 +297,95 @@ $ spack load /4rhrhm3
 ➜ spack unload --all
 ```
 
+### Libraries not found at runtime
+
+Sometimes a program that just compiled without any issues (as the correct spack modules are loaded) won't run afterwards as the libraries are not found at run time.
+```
+./your_program: error while loading shared libraries: libhdf5.so.103: cannot open shared object file: No such file or directory
+```
+
+This is caused by a recent change in Spack: `$LD_LIBRARY_PATH` is no longer set by default, to avoid loading a module breaking unrelated software. 
+You can avoid this by setting `$LD_LIBRARY_PATH` to the value of `$LIBRARY_PATH` after loading your modules (as the latter is managed by spack).
+
+```bash
+➜ export LD_LIBRARY_PATH=$LIBRARY_PATH
+```
+
+Keep in mind that doing so might bring back [the issues](#avoiding-broken-programs-due-to-loaded-dependencies) that changing `$LD_LIBRARY_PATH` causes.
+
+
+### Comparing modules
+
+Sometimes two packages look exactly the same:
+
+```bash
+➜ spack find -vl fftw
+-- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
+mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
+```
+
+Then you can use `spack diff` to
+
+```bash
+➜ spack diff /mmgor5w /cy5tkce
+```
+
+```diff
+--- fftw@3.3.10/mmgor5w3daiwtsdbyl4dfhjsueaciry2
++++ fftw@3.3.10/cy5tkcetpgx35rok2lqfi3d66rjptkva
+@@ depends_on @@
+-  fftw intel-oneapi-mpi build
++  fftw openmpi build
+[...]
+```
+
+Therefore, we know that in this example the first package depends on intel-oneapi-mpi and the second one on `openmpi`.
+
+### Debugging modules
+
+Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though you loaded the module). Adding `--sh` to `spack load` prints out all commands that would be executed during the `module load` allowing you to understand what is going on.
+
+```bash
+➜ spack load --sh cmake%gcc@8
+export ACLOCAL_PATH=[...];
+export CMAKE_PREFIX_PATH=[...];
+export CPATH=[...];
+export LD_LIBRARY_PATH=[...];
+export LIBRARY_PATH=[...];
+export MANPATH=[...];
+export PATH=[...];
+export PKG_CONFIG_PATH=[...];
+export SPACK_LOADED_HASHES=[...];
+```
+
+### Commonly used modules
+
+This is a list of modules I commonly use. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
+
+```bash
+spack load --only package openmpi@4%gcc@11.2/rpec5sw
+#spack load --only package fftw%gcc@11.2
+spack load --only package fftw@3.3.10%gcc@11.2/gjy2ay7
+spack load --only package libtool%gcc@11.2 # GNU Autotools
+spack load --only package hdf5%gcc@11.2/uglkavv # hdf5%gcc@11.2 +mpi
+spack load --only package numactl%gcc@11.2
+spack load --only package metis%gcc@11.2
+spack load --only package intel-tbb%gcc@11.2
+spack load --only package gsl%gcc@11.2
+spack load --only package cmake@3.22%gcc@11.2
+# spack load --only package gcc@11.2
+module load gcc/11.2.0-gcc-11.2.0-5i4t2bo
+spack load --only package python@3.11%gcc@11
+```
+
+## Former guides
+
+The following sections have been removed from the main guide as they are most likely no longer valid.
+
 ### Avoiding broken programs due to loaded dependencies
+
+{{< alert type="warning" >}} Recent versions of spack don't set `$LD_LIBRARY_PATH` any more, which means that "unnecessarily" loaded spack modules should no longer affect other programs at runtime. If you manually modify `$LD_LIBRARY_PATH` you might still run into these issues now.
+{{< /alert >}}
 
 Loading a spack module not just loads the specified module, but also all dependencies of this module. With some modules like `openmpi` that dependency tree can be quite large.
 
@@ -342,6 +434,7 @@ openmpi@4.1.4
 ```
 
 And loading module like `openssl` or `ncurses` from spack means that programs that depend on those libraries, but the versions provided by the base operating system, will crash.
+
 ```bash
 ➜ spack load openmpi%gcc
 ➜ nano somefile.txt
@@ -351,77 +444,15 @@ Segmentation fault (core dumped)
 ```
 
 One can avoid this by unloading the affected modules afterwards.
+
 ```bash
 ➜ spack unload ncurses
 ➜ spack unload openssl
 ```
 
 But in many cases one doesn't need all dependency modules and is really just interested in e.g. `openmpi` itself. Therefore, one can ignore the dependencies with `--only package`.
+
 ```bash
 # doesn't affect non-openmpi programs
 ➜ spack load --only package openmpi%gcc 
-```
-
-### Comparing modules
-
-Sometimes two packages look exactly the same:
-
-```bash
-➜ spack find -vl fftw
--- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
-mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
-```
-
-Then you can use `spack diff` to
-```bash
-➜ spack diff /mmgor5w /cy5tkce
-```
-```diff
---- fftw@3.3.10/mmgor5w3daiwtsdbyl4dfhjsueaciry2
-+++ fftw@3.3.10/cy5tkcetpgx35rok2lqfi3d66rjptkva
-@@ depends_on @@
--  fftw intel-oneapi-mpi build
-+  fftw openmpi build
-[...]
-```
-
-Therefore, we know that in this example the first package depends on intel-oneapi-mpi and the second one on `openmpi`.
-
-
-### Debugging modules
-
-Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though you loaded the module). Adding `--sh` to `spack load` prints out all commands that would be executed during the `module load` allowing you to understand what is going on.
-
-```bash
-➜ spack load --sh cmake%gcc@8
-export ACLOCAL_PATH=[...];
-export CMAKE_PREFIX_PATH=[...];
-export CPATH=[...];
-export LD_LIBRARY_PATH=[...];
-export LIBRARY_PATH=[...];
-export MANPATH=[...];
-export PATH=[...];
-export PKG_CONFIG_PATH=[...];
-export SPACK_LOADED_HASHES=[...];
-```
-
-
-### Commonly used modules
-
-This is a list of modules I commonly use. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
-
-```bash
-spack load --only package openmpi@4%gcc@11.2/rpec5sw
-#spack load --only package fftw%gcc@11.2
-spack load --only package fftw@3.3.10%gcc@11.2/gjy2ay7
-spack load --only package libtool%gcc@11.2 # GNU Autotools
-spack load --only package hdf5%gcc@11.2/uglkavv # hdf5%gcc@11.2 +mpi
-spack load --only package numactl%gcc@11.2
-spack load --only package metis%gcc@11.2
-spack load --only package intel-tbb%gcc@11.2
-spack load --only package gsl%gcc@11.2
-spack load --only package cmake@3.22%gcc@11.2
-# spack load --only package gcc@11.2
-module load gcc/11.2.0-gcc-11.2.0-5i4t2bo
-spack load --only package python@3.11%gcc@11
 ```

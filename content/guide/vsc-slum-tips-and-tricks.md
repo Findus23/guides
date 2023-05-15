@@ -239,33 +239,36 @@ The easiest way is using `spack find`.
 ➜ spack find cmake
 ```
 
-If you get a long output, you can ignore everything above the `==> N installed package(s)` line as it is unrelated to your current query. In case this only returns one module that fits your requirements, you can directly replace `spack find` with `spack load` to load this module.
+In case this only returns one module that fits your requirements, you can directly replace `spack find` with `spack load` to load this module.
 
 But most of the time, you will find multiple modules which differ in their properties (and `spack load` will fail if the query resolves to more than one package):
 
 ```bash
 ➜ spack find cmake
-==> 4 installed packages
 -- linux-almalinux8-zen / gcc@8.5.0 -----------------------------
-cmake@3.21.4
+cmake@3.24.3
 
--- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
-cmake@3.21.4
+-- linux-almalinux8-zen2 / gcc@9.5.0 ----------------------------
+cmake@3.24.3
 
--- linux-almalinux8-zen3 / aocc@3.2.0 ---------------------------
-cmake@3.21.4
+-- linux-almalinux8-zen3 / aocc@4.0.0 ---------------------------
+cmake@3.24.3
 
--- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
-cmake@3.21.4
+-- linux-almalinux8-zen3 / gcc@12.2.0 ---------------------------
+cmake@3.24.3
+
+-- linux-almalinux8-zen3 / intel@2021.7.1 -----------------------
+cmake@3.24.3
+==> 5 installed packages
 ```
 
-The most important property is the version and it is denoted with an `@` sign. Another property is the compiler the program or library was compiled with and it can be separated with a `%`.
+The most important property is the version and it is denoted with an `@` sign. Another property is the compiler the program or library was compiled with and it can be separated with a `%` (and an additional `@` for the version of the compiler).
 
-So if you want to load e.g. `cmake` version 3.x.x compiled with `gcc` version 11, you could directly search for it and subsequently load it.
+So if you want to load e.g. `cmake` version 3.x.x compiled with `gcc` version 12, you could directly search for it and subsequently load it.
 
 ```bash
-➜ spack find cmake@3%gcc@11
-➜ spack load cmake@3%gcc@11 
+➜ spack find cmake@3%gcc@12
+➜ spack load cmake@3%gcc@12 
 ```
 
 This way if another minor update of cmake is released, your command will load it. If you don't like this, check the next section.
@@ -281,11 +284,11 @@ Sometimes there are also multiple variants of the same module. `spack info modul
 If you dislike the fact that `spack load` queries don't resolve to specific packages, but just filters that describe the properties you want or prefer exactly specifying the version of a package for reproducibility, you can find the hash of package using `spack find -l` and can then use `/hash` to always refer to this exact package:
 
 ```bash
-➜ spack find -l gsl
+➜ spack find -l gsl%gcc@12
+-- linux-almalinux8-zen3 / gcc@12.2.0 ---------------------------
+whc7rma gsl@2.7.1
 ==> 1 installed package
--- linux-almalinux8-zen3 / gcc@11.2.0 ---------------------------
-4rhrhm3 gsl@2.7
-$ spack load /4rhrhm3
+➜ spack load /whc7rma
 ```
 
 ### Find currently loaded modules
@@ -324,7 +327,7 @@ Sometimes two packages look exactly the same:
 mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
 ```
 
-Then you can use `spack diff` to
+Then you can use `spack diff` to find the exact difference in them (most likely the modules that were used to compile this module)
 
 ```bash
 ➜ spack diff /mmgor5w /cy5tkce
@@ -346,7 +349,7 @@ Therefore, we know that in this example the first package depends on intel-oneap
 Sometimes one needs to know what `spack load somepackage` does exactly (e.g. because a library is still not found even though you loaded the module). Adding `--sh` to `spack load` prints out all commands that would be executed during the `module load` allowing you to understand what is going on.
 
 ```bash
-➜ spack load --sh cmake%gcc@8
+➜ spack load --sh cmake%gcc@12
 export ACLOCAL_PATH=[...];
 export CMAKE_PREFIX_PATH=[...];
 export CPATH=[...];
@@ -363,19 +366,17 @@ export SPACK_LOADED_HASHES=[...];
 This is a list of modules I commonly use. While it might not be directly usable for other people and will go out of date quickly, it might still serve as a good starting point.
 
 ```bash
-spack load --only package openmpi@4%gcc@11.2/rpec5sw
-#spack load --only package fftw%gcc@11.2
-spack load --only package fftw@3.3.10%gcc@11.2/gjy2ay7
-spack load --only package libtool%gcc@11.2 # GNU Autotools
-spack load --only package hdf5%gcc@11.2/uglkavv # hdf5%gcc@11.2 +mpi
-spack load --only package numactl%gcc@11.2
-spack load --only package metis%gcc@11.2
-spack load --only package intel-tbb%gcc@11.2
-spack load --only package gsl%gcc@11.2
-spack load --only package cmake@3.22%gcc@11.2
-# spack load --only package gcc@11.2
-module load gcc/11.2.0-gcc-11.2.0-5i4t2bo
-spack load --only package python@3.11%gcc@11
+spack load openmpi@4%gcc@12.2/2vqdnay
+spack load --only package fftw@3.3%gcc@12.2/nll54gw
+spack load libtool%gcc@12.2 # GNU Autotools
+spack load --only package hdf5%gcc@11.2/z3jjmoe +mpi
+spack load numactl%gcc@12.2
+spack load metis%gcc@12.2
+spack load intel-tbb%gcc@12.2
+spack load gsl%gcc@12.2
+spack load cmake@3.24%gcc@12.2
+spack load gcc@12.2
+spack load --only package python@3.9%gcc@12 # python > 3.9 seems to be missing for now
 ```
 
 ## Former guides

@@ -367,7 +367,7 @@ This is a list of modules I commonly use. While it might not be directly usable 
 
 ```bash
 spack load openmpi@4%gcc@12.2/2vqdnay
-spack load --only package fftw@3.3%gcc@12.2/nll54gw
+spack load --only package fftw@3.3%gcc@12.2/42q2cmu
 spack load libtool%gcc@12.2 # GNU Autotools
 spack load --only package hdf5%gcc@12.2/z3jjmoe # +mpi
 spack load numactl%gcc@12.2

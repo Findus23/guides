@@ -376,7 +376,7 @@ spack load intel-tbb%gcc@12.2
 spack load gsl%gcc@12.2
 spack load cmake@3.24%gcc@12.2
 spack load gcc@12.2
-spack load --only package python@3.9%gcc@12 # python > 3.9 seems to be missing for now
+spack load --only package python@3.11.3%gcc@12
 ```
 
 ## Former guides

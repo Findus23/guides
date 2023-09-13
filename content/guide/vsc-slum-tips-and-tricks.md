@@ -152,6 +152,20 @@ Details about past Jobs (like maximum memory usage), can be found using [`sacct`
 ➜ sacct -j 2052157 --long 
 ```
 
+### Watch job output
+
+If you submit a job, the output of the jobscript will by default be written to `slurm-000000.out` in the same directory. If you want to watch the output as it is written to the file while the job is running, `tail -f filename` will watch the file.
+But as the output file is only created once the job starts, this might fail.
+Using `tail -F` instead avoids this issue by watching the filename instead, which detects once the file appears and then watches it:
+
+```bash
+➜ tail -F slurm-952347.out 
+tail: cannot open 'slurm-952347.out' for reading: No such file or directory
+tail: 'slurm-952347.out' has appeared;  following new file
+The output of your job
+[...]
+```
+
 ## Advanced Slurm features
 
 ### QoS, accounts and partitions

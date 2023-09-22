@@ -4,11 +4,20 @@
 
 a {
   color: $green;
-  &:focus,&:active,&:hover{
-    color: darken($green,15%);
+  transition: color .2s;
+
+  &:focus, &:active, &:hover {
+    color: darken($green, 25%);
   }
+
   code {
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: .25rem;
+    transition: background-color .2s;
+
+    &:focus, &:active, &:hover {
+      background: lighten(#272822, 15%);
+    }
   }
 }
 
@@ -34,7 +43,8 @@ h1, h2, h3, h4, h5 {
 
 code {
   @extend .chroma;
-  //padding: 0 .2rem;
+  display: inline-block;
+  padding: 0 .3rem;
 }
 
 code::selection, .chroma ::selection {
@@ -67,8 +77,28 @@ pre {
   // }
 }
 
+#back-heading{
+  //border-bottom: solid 1px black;
+  //padding-bottom: ;
+  a {
+    color: black;
+    text-decoration: none;
+    transition: color .2s;
+    &:focus, &:active, &:hover {
+      color: $green;
+    }
+
+  }
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
 .table-of-contents {
   font-size: .8rem;
+  border: 1px solid black;
+  margin-bottom: 2rem;
 }
 
 .alert {
@@ -157,18 +187,23 @@ h1, h2, h3, h4, h5, h6 {
   color: #11D116;
 }
 
-nav.categories{
-  display: flex;
-  a {
-    margin: 0 5px;
-    padding: 3px;
-    background: $green;
-    &:focus,&:active,&:hover{
-      background: darken($green,15%);
-    }
-    color: white;
-    text-decoration: none;
-    //border-radius: ;
+.badge {
+  margin: 0 5px;
+  padding: 0 .3rem;
+  background: $green;
+  color: white;
+  text-decoration: none;
+  transition: background-color .2s;
+
+  &:focus, &:active, &:hover {
+    background: darken($green, 15%);
   }
 
+}
+
+nav.categories {
+  display: flex;
+  a {
+    @extend .badge;
+  }
 }

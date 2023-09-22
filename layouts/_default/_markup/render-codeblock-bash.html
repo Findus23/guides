@@ -3,7 +3,7 @@
 {{ if transform.CanHighlight $lang }}
 {{ $highlighted := highlight .Inner $lang }}
 <div class="{{ $class }}">
-    {{ replace $highlighted "➜ " "<span class='shell'>➜ </span>" | safeHTML  }}
+    {{ replace $highlighted "➜ " "<span class='shell'>$ </span>" | safeHTML  }}
 </div>
 {{else}}
 <pre><code class="{{ $class }}">{{.Inner}}</code></pre>

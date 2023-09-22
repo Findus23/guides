@@ -2,8 +2,9 @@
     {{ .Title }} &ndash; {{ .Site.Title }}
 {{ end }}
 {{ define "main" }}
-    <a href="/">Other guides</a>
-    <article>
+<h2 id="back-heading"><a id="back-button" href="/">guides.lw1.at</a></h2>
+    <hr>
+<article>
         <header>
             <h1>{{ .Title }}</h1>
             {{ if (gt .Params.date 0) }}

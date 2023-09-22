@@ -22,3 +22,6 @@ permalinks:
   guide: /:slug/
 taxonomies:
   category: categories
+#ignoreFiles:
+#  - \.mp4$
+#  - \.webm$

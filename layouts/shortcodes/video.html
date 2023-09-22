@@ -1,5 +1,5 @@
 <figure>
-    <video {{if .Get "loop"}} autoplay loop {{else}} preload="metadata"{{ end }}muted controls playsinline>
+    <video {{if .Get "loop"}}loop{{else}}{{ end }} {{if .Get "autoplay"}}autoplay preload="metadata"{{else}}{{ end }}muted controls playsinline>
         {{ with .Page.Resources.GetMatch (printf "*%s*" (.Get "src_webm")) }}
         <source src="{{ .Permalink }}" type="video/webm; codecs=vp9">
         {{ end }}

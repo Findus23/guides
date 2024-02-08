@@ -166,6 +166,8 @@ The output of your job
 [...]
 ```
 
+
+
 ## Advanced Slurm features
 
 ### QoS, accounts and partitions
@@ -175,14 +177,35 @@ Depending on access to private nodes, you might have access to many different Qo
 On VSC you can get an overview over your account with `sqos` (this is also shown on login):
 
 ```bash
-➜ sqos -acc # this only works on VSC
+# this only works on VSC
+➜ /opt/adm/vsc/cluster-admin/src/python_modules/vsc_node_tools/scripts/sqos.sh account
+==============================================================
+Your jobs can run with the following account(s) and quality of service (QoS):
+
+default_account:                       p12345 
+        account:                       p12345 
+
+    default_qos:                  p12345_0512 
+            qos:                  p12345_0512 
+                              p12345_a100dual 
+                               p12345_a40dual 
+
 ```
 
 If you want to a different account or QoS than your default (e.g. if you want to access private nodes or GPU nodes), you can specify them with `--qos` and `--acccount` in `salloc`, `sbatch` or your job script.
 
 You can also get an overview over all available partitions with `sinfo` and specify one explicitly with `--partition`.
 
-If you want to get a quick overview over the QoS at VSC and their current usage, you can use `sqos`.
+You can get a better overview over the current usage of the QoS using `sqos`. This gives you the number of CPUs that are currently in use out of the limit for each QoS:
+
+```bash
+# this only works on VSC
+➜ sqos
+     qos name  type  total res   used res   free res        walltime   priority   total n*    used n*    free n* 
+=================================================================================================================
+  p71867_0512   cpu       7680       5632       2048     10-00:00:00     100000         30         22          8 
+* node values do not always align with resource values since nodes can be partially allocated
+```
 
 ### Array Jobs
 
@@ -197,7 +220,14 @@ Sometimes you might want to submit a larger number of similar jobs. This can be 
 Keep in mind that each individual job should not be too small (more than just a few minutes) as otherwise the computational overhead of scheduling the job and starting it will not be worth it. In these cases using one job that runs the program in a loop will be more efficient.
 {{< /alert >}}
 
+### Ignore specific nodes
 
+Sometimes it is possible that one node is broken in some way (maybe one of the GPUs is no longer detected), but your jobs still get assigned to it. Then you can use 
+[`--exclude`](https://slurm.schedmd.com/sbatch.html#OPT_exclude) to exclude individual or ranges of nodes from your job.
+
+```bash
+➜ sbatch --exclude n1234-[001-002],n1234-008 job.sh
+```
 
 ## SSH login via login.univie.ac.at
 
@@ -337,8 +367,9 @@ Sometimes two packages look exactly the same:
 
 ```bash
 ➜ spack find -vl fftw
--- linux-almalinux8-zen2 / intel@2021.5.0 -----------------------
-mmgor5w fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float  cy5tkce fftw@3.3.10+mpi+openmp~pfft_patches precision=double,float
+-- linux-almalinux8-zen3 / intel@2021.9.0 -----------------------
+ugklsjz fftw@3.3.10+mpi+openmp~pfft_patches build_system=autotools precision=double,float
+j7dhzrq fftw@3.3.10+mpi+openmp~pfft_patches build_system=autotools precision=double,float
 ```
 
 Then you can use `spack diff` to find the exact difference in them (most likely the modules that were used to compile this module)
@@ -367,7 +398,7 @@ Sometimes one needs to know what `spack load somepackage` does exactly (e.g. bec
 export ACLOCAL_PATH=[...];
 export CMAKE_PREFIX_PATH=[...];
 export CPATH=[...];
-export LD_LIBRARY_PATH=[...];
+export LD_RUN_PATH=[...];
 export LIBRARY_PATH=[...];
 export MANPATH=[...];
 export PATH=[...];

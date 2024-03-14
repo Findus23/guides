@@ -139,12 +139,12 @@ Especially useful is the estimated start time of a scheduled job:
 ```
 
 A lot more information about scheduling including the calculated priority of jobs can be found using [`sprio`](https://slurm.schedmd.com/sprio.html)
+
 ```bash
 ➜ sprio -u username
 ```
 
 This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF) or the [VSC wiki](https://wiki.vsc.ac.at/doku.php?id=doku:slurm_job_reason_codes).
-
 
 Details about past Jobs (like maximum memory usage), can be found using [`sacct`](https://slurm.schedmd.com/sacct.html). You can manually specify the needed columns or display most of them using `--long`
 
@@ -165,8 +165,6 @@ tail: 'slurm-952347.out' has appeared;  following new file
 The output of your job
 [...]
 ```
-
-
 
 ## Advanced Slurm features
 
@@ -222,7 +220,7 @@ Keep in mind that each individual job should not be too small (more than just a 
 
 ### Ignore specific nodes
 
-Sometimes it is possible that one node is broken in some way (maybe one of the GPUs is no longer detected), but your jobs still get assigned to it. Then you can use 
+Sometimes it is possible that one node is broken in some way (maybe one of the GPUs is no longer detected), but your jobs still get assigned to it. Then you can use
 [`--exclude`](https://slurm.schedmd.com/sbatch.html#OPT_exclude) to exclude individual or ranges of nodes from your job.
 
 ```bash
@@ -234,7 +232,6 @@ Sometimes it is possible that one node is broken in some way (maybe one of the G
 [official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access) (but we are using the more modern ProxyJump instead of Agent forwarding as this way we don't have to trust the intermediate server with our private key)
 
 Access to VSC is only possible from IP addresses of the partner universities. If you are from the University of Vienna and don't want to use the VPN, an SSH tunnel via `login.univie.ac.at` is an alternative.
-
 
 To connect to the login server, the easiest thing is to put the config for the host in your `~/.ssh/config` (create it, if it doesn't yet exist).
 
@@ -254,8 +251,7 @@ This way you should now be able to test connecting to the login server using
 ➜ ssh loginUnivie
 ```
 
-Then you can add another entry to `~/.ssh/config` on your computer for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created. 
-
+Then you can add another entry to `~/.ssh/config` on your computer for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created.
 
 ```bash
 Host vsc5
@@ -347,11 +343,12 @@ whc7rma gsl@2.7.1
 ### Libraries not found at runtime
 
 Sometimes a program that just compiled without any issues (as the correct spack modules are loaded) won't run afterwards as the libraries are not found at run time.
+
 ```
 ./your_program: error while loading shared libraries: libhdf5.so.103: cannot open shared object file: No such file or directory
 ```
 
-This is caused by a recent change in Spack: `$LD_LIBRARY_PATH` is no longer set by default, to avoid loading a module breaking unrelated software. 
+This is caused by a recent change in Spack: `$LD_LIBRARY_PATH` is no longer set by default, to avoid loading a module breaking unrelated software.
 You can avoid this by setting `$LD_LIBRARY_PATH` to the value of `$LIBRARY_PATH` after loading your modules (as the latter is managed by spack).
 
 ```bash
@@ -359,7 +356,6 @@ You can avoid this by setting `$LD_LIBRARY_PATH` to the value of `$LIBRARY_PATH`
 ```
 
 Keep in mind that doing so might bring back [the issues](#avoiding-broken-programs-due-to-loaded-dependencies) that changing `$LD_LIBRARY_PATH` causes.
-
 
 ### Comparing modules
 
@@ -422,6 +418,135 @@ spack load gsl%gcc@12.2
 spack load cmake@3.24%gcc@12.2
 spack load gcc@12.2
 spack load --only package python@3.11.3%gcc@12
+```
+
+## Examples
+
+The examples in this section are not intended to be official documentation on how to use these software packages or the most efficient way to utilize VSC, but rather examples on how VSC usage can look in practice and inspiration for own jobscripts.
+
+### MUSIC and SWIFT
+
+We are using [MUSIC](https://bitbucket.org/ohahn/music/src/master/) to generate initial simulations for cosmological simulations and then run them using [SWIFT](https://swift.strw.leidenuniv.nl/).
+
+#### Managing modules
+
+```bash
+➜ cat modules.sh 
+spack load openmpi@4.1.6%gcc@12.2/exh7lqk
+spack load --only package fftw@3.3%gcc@12.2/42q2cmu
+spack load libtool%gcc@12.2 # GNU Autotools
+spack load --only package hdf5%gcc@12.2/z3jjmoe # +mpi
+spack load numactl%gcc@12.2
+spack load metis%gcc@12.2
+spack load intel-tbb%gcc@12.2
+spack load gsl%gcc@12.2
+spack load cmake@3.24%gcc@12.2
+spack load gcc@12.2
+➜ source modules.sh
+➜ export LD_LIBRARY_PATH=$LIBRARY_PATH
+```
+
+#### Compiling MUSIC
+```bash
+➜ git clone https://bitbucket.org/ohahn/music.git
+➜ cd music/
+➜ mkdir build
+➜ cd build/
+➜ cmake ..
+➜ make -j 20
+➜ ./MUSIC
+```
+
+#### Compiling SWIFT
+```bash
+➜ git clone https://gitlab.cosma.dur.ac.uk/swift/swiftsim.git
+➜ cd swiftsim/
+➜ ./autogen.sh
+➜ ./autogen.sh
+➜ ./configure --enable-fof --enable-compiler-warnings=yes --enable-stand-alone-fof --with-numa --with-tbbmalloc 
+# check the summary to see if everything you need is enabled/detected
+➜ make -j 20
+➜ ./swift # or ./swift_mpi
+```
+
+#### A job-script for MUSIC
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=music-auriga6
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=test@example.com
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --exclusive
+#SBATCH --time=2:00:00
+
+ROOT=/gpfs/data/fs12345/path/to/project
+MUSIC=$ROOT/music/build/MUSIC
+run=$1
+
+cd $ROOT
+source ./modules.sh
+export LD_LIBRARY_PATH=$LIBRARY_PATH
+
+cd $ROOT/data/$run/
+
+$MUSIC music.conf
+```
+Submit as `sbatch music_job.sh something` to run using `data/something/music.conf`.
+
+#### A job-script for small SWIFT simulations
+
+For (very) small numbers of particles MPI overhead might slow down the simulation more than speed it up. Therefore, we could just use one of the CPUs of a shared node.
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=auriga6
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=test@example.com
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task 64
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=24:00:00
+#SBATCH --mem=128GB
+
+ROOT=/gpfs/data/fs72085/lwinkler/projects/cosmos_data/auriga-resim
+swift=$ROOT/swiftsim/swift
+run=$1
+
+cd $ROOT
+source ./modules.sh
+export LD_LIBRARY_PATH=$LIBRARY_PATH
+
+cd $ROOT/data/$run/
+
+$swift --cosmology --self-gravity --fof --limiter --threads=64 --pin run_auriga6.yml
+```
+#### A job-script for large SWIFT simulations
+
+Check ["Running on Large Systems"](https://swift.strw.leidenuniv.nl/docs/GettingStarted/running_on_large_systems.html) for more information.
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=auriga6
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=test@example.com
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=2
+#SBATCH --exclusive
+#SBATCH --time=24:00:00
+
+ROOT=/gpfs/data/fs72085/lwinkler/projects/cosmos_data/auriga-resim
+swift=$ROOT/swiftsim/swift
+run=$1
+
+cd $ROOT
+source ./modules.sh
+export LD_LIBRARY_PATH=$LIBRARY_PATH
+
+cd $ROOT/data/$run/
+
+mpirun -np 8 $swift --cosmology --self-gravity --fof --limiter --threads=64 --pin run_auriga6.yml
 ```
 
 ## Former guides

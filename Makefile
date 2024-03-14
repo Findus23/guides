@@ -1,5 +1,5 @@
 server:
-	./hugo server -D
+	./hugo server -D --renderToMemory
 
 build:
 	rm -fr public.bak/

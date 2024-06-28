@@ -227,43 +227,39 @@ Sometimes it is possible that one node is broken in some way (maybe one of the G
 ➜ sbatch --exclude n1234-[001-002],n1234-008 job.sh
 ```
 
-## SSH login via login.univie.ac.at
+## SSH login to VSC at the University of Vienna
 
-[official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access) (but we are using the more modern ProxyJump instead of Agent forwarding as this way we don't have to trust the intermediate server with our private key)
+[official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access)
 
 Access to VSC is only possible from IP addresses of the partner universities. If you are from the University of Vienna and don't want to use the VPN, an SSH tunnel via `login.univie.ac.at` is an alternative.
 
-To connect to the login server, the easiest thing is to put the config for the host in your `~/.ssh/config` (create it, if it doesn't yet exist).
+If you are connected to the university network, you can directly connect using the following:
 
 ```bash
-Host loginUnivie
-    HostName login.univie.ac.at
-    User testuser12 # replace with your username
-    # the following are needed if you are using OpenSSH 8.8 or newer
-    # and the login server isn't yet updated to a never version
-    HostkeyAlgorithms +ssh-rsa
-    PubkeyAcceptedAlgorithms +ssh-rsa
+➜ ssh vscuser@vsc5.vsc.ac.at
 ```
 
-This way you should now be able to test connecting to the login server using
 
-```bash
-➜ ssh loginUnivie
-```
-
-Then you can add another entry to `~/.ssh/config` on your computer for VSC that uses `ProxyJump` to connect via the `loginUnivie` entry we just created.
+Alternatively you can add a section in the  `~/.ssh/config` on your computer for VSC (if you still have a `ProxyJump` line here, you have to remove it).
 
 ```bash
 Host vsc5
     Hostname vsc5.vsc.ac.at
     User vscuser
-    ProxyJump loginUnivie
     # Port 27 # (only use if you are using ssh keys)
 ```
-
+and then connect directly like this:
 ```bash
 ➜ ssh vsc5
 ```
+
+### VPN
+
+If you want to connect to VSC (or any other univie-PC) from outside the university network, you need to set up [the ZID VPN](https://zid.univie.ac.at/en/vpn/).
+For the VPN to work, you will also need to first [set up multi-factor authentication](https://zid.univie.ac.at/en/mfa/) on your phone. If you don't yet have a TOPT client on your phone and are using Android, I recommend [Aegis Authenticator](https://getaegis.app/).
+
+You will need to follow the guides here to [install the software by F5](https://zid.univie.ac.at/en/vpn/user-guides/) on your PC.
+For Linux the installation instruction [**can be found here**](https://zid.univie.ac.at/en/vpn/user-guides/linux/). 
 
 ## Spack Modules
 

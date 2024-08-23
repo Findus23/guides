@@ -422,7 +422,7 @@ The examples in this section are not intended to be official documentation on ho
 
 ### MUSIC and SWIFT
 
-We are using [MUSIC](https://bitbucket.org/ohahn/music/src/master/) to generate initial simulations for cosmological simulations and then run them using [SWIFT](https://swift.strw.leidenuniv.nl/).
+We are using [MUSIC](https://github.com/cosmo-sims/music) to generate initial simulations for cosmological simulations and then run them using [SWIFT](https://swift.strw.leidenuniv.nl/).
 
 #### Managing modules
 
@@ -444,7 +444,7 @@ spack load gcc@12.2
 
 #### Compiling MUSIC
 ```bash
-➜ git clone https://bitbucket.org/ohahn/music.git
+➜ git clone https://github.com/cosmo-sims/MUSIC2.git
 ➜ cd music/
 ➜ mkdir build
 ➜ cd build/
@@ -533,7 +533,7 @@ Check ["Running on Large Systems"](https://swift.strw.leidenuniv.nl/docs/Getting
 #SBATCH --time=24:00:00
 
 ROOT=/gpfs/data/fs72085/lwinkler/projects/cosmos_data/auriga-resim
-swift=$ROOT/swiftsim/swift
+swift=$ROOT/swiftsim/swift_mpi
 run=$1
 
 cd $ROOT

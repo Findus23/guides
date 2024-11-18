@@ -130,6 +130,7 @@ The current status of jobs in the Queue can be seen using [`squeue`](https://slu
 
 ```bash
 ➜ squeue -u username
+➜ squeue --me
 ```
 
 Especially useful is the estimated start time of a scheduled job:
@@ -226,6 +227,38 @@ Sometimes it is possible that one node is broken in some way (maybe one of the G
 ```bash
 ➜ sbatch --exclude n1234-[001-002],n1234-008 job.sh
 ```
+
+### Set job name dynamically
+
+Setting a helpful `--job-name` makes it a lot easier to keep track of the currently submitted jobs. But once the number of job scripts gets larger, this either means always specifying `--job-name` when calling `sbatch` or editing a lot of job-scripts.
+
+As the job name is one of the properties that can still be changed after a job has been submitted, one alternative is having the job rename itself based on some dynamical property (e.g. the name of the current directory).
+
+For this it is enough to call `scontrol` from the job script itself:
+
+```bash
+scontrol update JobId=$JobID JobName=something-$(basename $PWD)
+```
+
+### Change the default table format
+
+By default, the output of `squeue` only shows the first 8 characters of the job name, making it hard to distinguish them.
+
+```bash
+➜ squeue --me
+  JOBID            PARTITION     NAME     USER ST       TIME  NODES     NODELIST(REASON)
+4306686            zen3_0512 music-ic lwinkler PD       0:00      1           (Priority)
+```
+
+One can change the output of `squeue` by setting the environment variable `SQUEUE_FORMAT` (e.g. globally in the `~/.bashrc`):
+
+```bash
+➜ export SQUEUE_FORMAT="%.18i %.9P %.15j %.8u %.2t %.10M %.6D %R"
+➜ squeue --me
+  JOBID PARTITION            NAME     USER ST       TIME  NODES NODELIST(REASON)
+4306686 zen3_0512       music-ics lwinkler PD       0:00      1 (Priority)
+```
+
 
 ## SSH login to VSC at the University of Vienna
 

@@ -300,6 +300,7 @@ Snapshots:
   scale_factor_first:  0.1
   compression:         4
   invoke_ps:           1
+  invoke_fof:          1
   output_list_on:      1
   output_list:         outputs.txt
 
@@ -394,3 +395,13 @@ Now you can start the actual N-Body simulation:
 
 - If you had to abort a simulation, you can continue it from the last restart-file (written every `Restart.delta_hours` hours) by adding `--restart` to the swift command
 - While the monofonIC config uses Mpc/h as the length unit, SWIFT uses Mpc as a length unit in all output and configuration options.
+
+## Reading the Output
+
+One easy way to read and use the simulation output in python is the `swiftsimio` package. You can find out more about it [in the documentation](https://swiftsimio.readthedocs.io/en/latest/).
+Alternatively most data can easily be read directly in python:
+
+```python
+
+
+```

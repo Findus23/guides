@@ -300,7 +300,7 @@ Snapshots:
   scale_factor_first:  0.1
   compression:         4
   invoke_ps:           1
-  invoke_fof:          1
+  invoke_fof:          1 
   output_list_on:      1
   output_list:         outputs.txt
 
@@ -398,10 +398,58 @@ Now you can start the actual N-Body simulation:
 
 ## Reading the Output
 
-One easy way to read and use the simulation output in python is the `swiftsimio` package. You can find out more about it [in the documentation](https://swiftsimio.readthedocs.io/en/latest/).
-Alternatively most data can easily be read directly in python:
+One easy way to read and use the simulation output in python is the `swiftsimio` package. You can learn more about it [in the documentation](https://swiftsimio.readthedocs.io/en/latest/).
+
+Alternatively most data can easily be read directly from the HDF5 file. `h5glance` can once again help to see where which data is stored:
+```bash
+~/test-simulation ➜ ~/h5glance-venv/bin/h5glance output_0006.hdf5  
+output_0006.hdf5
+[...]
+├Code (16 attributes)
+├Cosmology (39 attributes)
+├DMParticles     -> /PartType1
+├GravityScheme (22 attributes)
+├Header (26 attributes)
+│ └PartTypeNames  [128-byte ASCII string: 7]
+├ICs_parameters (18 attributes)
+├InternalCodeUnits (5 attributes)
+├Parameters (165 attributes)
+├PartType1 (3 attributes)
+│ ├Coordinates    [float64: 2097152 × 3] (14 attributes)
+│ ├FOFGroupIDs    [int64: 2097152] (14 attributes)
+│ ├Masses [float32: 2097152] (14 attributes)
+│ ├ParticleIDs    [uint64: 2097152] (14 attributes)
+│ ├Potentials     [float32: 2097152] (14 attributes)
+│ ├Softenings     [float32: 2097152] (14 attributes)
+│ └Velocities     [float32: 2097152 × 3] (14 attributes)
+├PhysicalConstants (1 attributes)
+│ ├CGS (26 attributes)
+│ └InternalUnits (26 attributes)
+├Policy (29 attributes)
+├RecordingTriggers
+├SubgridScheme (5 attributes)
+│ └NamedColumns
+├Units (5 attributes)
+└UnusedParameters
+```
+This can then be read in Python: 
 
 ```python
+import h5py
+import numpy as np
 
+with h5py.File("swift-testing/output_0006.hdf5", "r") as f:
+    print(
+        f.keys())  # <KeysViewHDF5 ['Cells', 'Code', 'Cosmology', 'DMParticles', 'GravityScheme', 'Header', 'ICs_parameters', 'InternalCodeUnits', 'Parameters', 'PartType1', 'PhysicalConstants', 'Policy', 'RecordingTriggers', 'SubgridScheme', 'Units', 'UnusedParameters']>
+    header = f["Header"].attrs
+    cosmology = f["Cosmology"].attrs
+    print(f"z={header['Redshift'][0]:.2f} a={header['Scale-factor'][0]:.2f}")  # z=0.00 a=1.00
+    boxsize = header['BoxSize'][0]  # keep in mind that all length-units are in Mpc, not Mpc/h
+    print(f"{boxsize=}")  # boxsize=np.float64(442.856721302682)
 
+    # load data into memory as a numpy array
+    coordinates = np.asarray(f["PartType1/Coordinates"])
+    print(coordinates.shape)  # (2097152, 3)
 ```
+
+For information about visualizing particle coordinates as point-clouds check out [this other guide]({{< ref "visualizing-pointclouds" >}}).

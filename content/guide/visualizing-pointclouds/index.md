@@ -263,7 +263,6 @@ You can use the `<video>` tag to embed videos in websites.
 For gif-like looping videos:
 
 ```html
-
 <video autoplay loop muted controls playsinline>
     <source src="video.webm" type="video/webm; codecs=vp9">
     <source src="video.mp4" type="video/mp4">
@@ -273,7 +272,6 @@ For gif-like looping videos:
 For regular videos (only load the metadata/thumbnail until pressing play):
 
 ```html
-
 <video preload="metadata" muted controls playsinline>
     <source src="video.webm" type="video/webm; codecs=vp9">
     <source src="video.mp4" type="video/mp4">

@@ -264,7 +264,7 @@ One can change the output of `squeue` by setting the environment variable `SQUEU
 
 [official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access)
 
-Access to VSC is only possible from IP addresses of the partner universities. If you are from the University of Vienna and don't want to use the VPN, an SSH tunnel via `login.univie.ac.at` is an alternative.
+Access to VSC is only possible from IP addresses of the partner universities.
 
 If you are connected to the university network, you can directly connect using the following:
 

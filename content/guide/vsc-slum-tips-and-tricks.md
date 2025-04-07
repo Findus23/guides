@@ -11,7 +11,7 @@ aliases:
 ---
 
 
-This is not official documentation for the [Vienna Scientific Cluster](https://vsc.ac.at). For this check the [VSC Wiki](https://wiki.vsc.ac.at). Instead, this is my personal cheat sheet of things that are not well documented elsewhere. Also while the content is focused on the VSC, most of the things mentioned here also apply to similar setups that use Slurm at other universities.
+This is not official documentation for the [Vienna Scientific Cluster](https://vsc.ac.at). For this check the [VSC Docs](https://docs.vsc.ac.at/). Instead, this is my personal cheat sheet of things that are not well documented elsewhere. Also while the content is focused on the VSC, most of the things mentioned here also apply to similar setups that use Slurm at other universities.
 
 <!--more-->
 
@@ -33,11 +33,7 @@ Don't forget to then connect to the node you get assigned:
 
 ## Storage
 
-official docs:
-
-- [vsc4_storage](https://wiki.vsc.ac.at/doku.php?id=doku:vsc4_storage)
-- [storage](https://wiki.vsc.ac.at/doku.php?id=doku:storage)
-- [introduction-to-vsc:08_storage_infrastructure:storage_infrastructure](https://wiki.vsc.ac.at/doku.php?id=pandoc:introduction-to-vsc:08_storage_infrastructure:storage_infrastructure)
+official docs: https://docs.vsc.ac.at/storage/where_store_data/
 
 `$HOME` is limited to 100 GB and storing/compiling code. Anything else should be stored at `$DATA`.
 
@@ -145,7 +141,7 @@ A lot more information about scheduling including the calculated priority of job
 ➜ sprio -u username
 ```
 
-This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF) or the [VSC wiki](https://wiki.vsc.ac.at/doku.php?id=doku:slurm_job_reason_codes).
+This will also show the reason why the job is still queued for which an explanation can be found [in the slurm documentation](https://slurm.schedmd.com/squeue.html#lbAF) or the [VSC docs](https://docs.vsc.ac.at/running_jobs/monitoring_jobs/#job-reason-codes).
 
 Details about past Jobs (like maximum memory usage), can be found using [`sacct`](https://slurm.schedmd.com/sacct.html). You can manually specify the needed columns or display most of them using `--long`
 
@@ -262,7 +258,7 @@ One can change the output of `squeue` by setting the environment variable `SQUEU
 
 ## SSH login to VSC at the University of Vienna
 
-[official docs](https://wiki.vsc.ac.at/doku.php?id=doku:vpn_ssh_access)
+[official docs](https://docs.vsc.ac.at/login/how_to_login/)
 
 Access to VSC is only possible from IP addresses of the partner universities.
 
@@ -296,7 +292,7 @@ For Linux the installation instruction [**can be found here**](https://zid.univi
 
 ## Spack Modules
 
-([official docs](https://wiki.vsc.ac.at/doku.php?id=doku:spack), that this guide builds on. More useful tips can be found in the [spack documentation](https://spack.readthedocs.io/en/latest/))
+([official docs](https://docs.vsc.ac.at/software/installation/spack/), that this guide builds on. More useful tips can be found in the [spack documentation](https://spack.readthedocs.io/en/latest/))
 
 Software that is needed can be loaded via modules. The easiest way to find the right module for the current processor architecture, is directly querying `spack`, which is used to provide all compiled libraries and applications. There should never be a need to run `module` directly and doing so might accidentally pick libraries that are not intended for the current processor architecture.
 
@@ -447,6 +443,118 @@ spack load gsl%gcc@12.2
 spack load cmake@3.24%gcc@12.2
 spack load gcc@12.2
 spack load --only package python@3.11.3%gcc@12
+```
+
+## GPU setup
+
+These are a few more draft/wip notes on how to use the GPU nodes on VSC. Here I am using [jax] (https://docs.jax.dev/en/latest/), but the notes might also be useful for other software. Also check out the [VSC documentation](https://docs.vsc.ac.at/running_jobs/gpus/) for details on the hardware and how to submit jobs using e.g. only one GPU and half a computing node.
+
+### The simple way: Using pip-installed CUDA libraries
+
+If you are using Python software like jax, pytorch, tensorflow, etc. you should be able to install it directly without any issues by [following the official documentation](https://docs.jax.dev/en/latest/installation.html#pip-installation-nvidia-gpu-cuda-installed-via-pip-easier).
+
+
+```bash
+➜ spack load python@3.11.3%gcc@12
+➜ python -m venv your-venv
+➜ source ./your-venv/bin/activate
+➜ pip install --upgrade pip
+➜ pip install --upgrade "jax[cuda12]"
+```
+
+This way jax (/pytorch/tensorflow) will use the CUDA libraries that are installed with pip and ignore the VSC-provided libraries:
+
+```bash
+➜ pip freeze
+jax==0.5.3
+jax-cuda12-pjrt==0.5.3
+jax-cuda12-plugin==0.5.3
+jaxlib==0.5.3
+ml_dtypes==0.5.1
+numpy==2.2.4
+nvidia-cublas-cu12==12.8.4.1
+nvidia-cuda-cupti-cu12==12.8.90
+nvidia-cuda-nvcc-cu12==12.8.93
+nvidia-cuda-runtime-cu12==12.8.90
+nvidia-cudnn-cu12==9.8.0.87
+nvidia-cufft-cu12==11.3.3.83
+nvidia-cusolver-cu12==11.7.3.90
+nvidia-cusparse-cu12==12.5.8.93
+nvidia-nccl-cu12==2.26.2
+nvidia-nvjitlink-cu12==12.8.93
+opt_einsum==3.4.0
+scipy==1.15.2
+```
+
+You can verify that this works by testing in an interactive job:
+
+```bash
+➜ salloc --time 00:15:00 --qos=pXXXXX_a40dual --partition=zen2_0256_a40x2
+➜ ssh name-of-node
+➜ source ./your-venv/bin/activate
+➜ python
+```
+
+```python
+>>> import jax
+>>> jax.devices()
+[CudaDevice(id=0), CudaDevice(id=1)]
+>>> a = jax.numpy.zeros(10000)
+>>> a.device.platform
+'gpu'
+```
+
+### Using the NVIDIA Nsight Systems profiler
+
+This is mostly based on the [NVIDIA documentation](https://docs.nvidia.com/nsight-systems/UserGuide/index.html) where you can find a lot more information. The version of nsys provided on VSC doesn't seem to be working reliably for me, so the easiest solution is to download and unpack [the latest version](https://developer.nvidia.com/nsight-systems/get-started):
+
+```bash
+# replace with latest version from https://developer.nvidia.com/nsight-systems/get-started
+➜ wget https://developer.nvidia.com/downloads/assets/tools/secure/nsight-systems/2025_2/NsightSystems-linux-public-2025.2.1.130-3569061.run 
+➜ chmod +x NsightSystems-linux-public-2025.2.1.130-3569061.run
+➜ ./NsightSystems-linux-public-2025.2.1.130-3569061.run --noexec --target tmp/
+➜ ./tmp/pkg/bin/nsys # or nsys-ui
+# move tmp/pkg to wherever you like
+```
+
+```bash
+# on a GPU node
+➜ ./tmp/pkg/bin/nsys profile nvidia-smi your-program
+Collecting data...
+# output of your program
+Generating '/tmp/nsys-report-91fd.qdstrm'
+[1/1] [========================100%] report2.nsys-rep
+Generated:
+        /your/homedirectory/report1.nsys-rep
+```
+
+You can then copy the `report1.nsys-rep` to your local computer and analyze it `nsys-ui`. It seems to work best when the same version is used, so use the same steps as before to download it locally. Also, the [NVIDIA Jax Toolbox](https://github.com/NVIDIA/JAX-Toolbox/blob/main/docs/profiling.md) has more jax-specific information about using nsys optimally.
+
+### The harder way: Using the spack-provided CUDA libraries
+
+If your tests require using the CUDA libraries provided on VSC (or you are using non-Python software) then these notes might be helpful:
+
+Jax [requires](https://docs.jax.dev/en/latest/installation.html#pip-installation-nvidia-gpu-cuda-installed-locally-harder) specific versions of CUDA, CUDNN and NCCL. If we use those as provided by the VSC setup, then we can instead use `pip install --upgrade "jax[cuda12_local]"` to install jax. This should only install `jax`, `jaxlib`, `jax-cuda12-pjrt` and `jax-cuda12-plugin` (as of jax 0.5.2) and no nvidia-packages.
+
+Then you can use the spack libraries like this (in an interactive session on a GPU node or a jobscript):
+
+```bash
+➜ spackup "cuda-zen"
+
+➜ spack load --only package nccl@2.23
+➜ spack load --only package cudnn@9
+➜ spack load --only package cuda@12.3.0%gcc@12
+
+➜ export LD_LIBRARY_PATH=$LIBRARY_PATH
+# at least in my tests the CUDA_HOME path was missing in the LD_LIBRARY_PATH, so we can add it here
+➜ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
+➜ source ./your-venv/bin/activate
+
+➜ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
+➜ python your_program.py
+# or with nsys profiling
+➜ /path/to/nsys profile --cuda-graph-trace=node python your_program.py
 ```
 
 ## Examples

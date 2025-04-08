@@ -20,6 +20,7 @@ markup:
     startLevel: 2
 permalinks:
   guide: /:slug/
+  static_pages: /:slug/
 taxonomies:
   category: categories
 #ignoreFiles:

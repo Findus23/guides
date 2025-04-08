@@ -1,4 +1,4 @@
-{{ if or (gt .WordCount 400 ) (.Params.toc) }}
+{{ if (and (or (gt .WordCount 400 ) .Params.toc) (not (eq .Params.toc false))) }}
     <aside class="table-of-contents">
         {{.TableOfContents}}
     </aside>

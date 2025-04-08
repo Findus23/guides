@@ -1,6 +1,10 @@
 <figure>
     {{ with .Page.Resources.GetMatch (printf "*%s*" (.Get "src")) }}
+    {{ if eq .MediaType.SubType "svg" }}
+    <img src="{{ .Permalink }}" loading="lazy">
+    {{ else }}
         <img src="{{ .Permalink }}" width="{{ .Width }}" height="{{ .Height }}" loading="lazy">
+    {{ end }}
     {{ end }}
     {{if .Get "title"}}
         <figcaption>{{ .Get "title" }}</figcaption>

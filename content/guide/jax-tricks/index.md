@@ -11,7 +11,7 @@ description: "An assorted list of tricks for using Jax"
 
 This is an unordered list of useful things I found while using [JAX](https://docs.jax.dev/en/latest/), that don't seem
 to be documented well somewhere else. Partially this is because these features are experimental, so don't depend on them
-working the exact same way in future versions of JAX. Nevertheless they might be useful during development and testing
+working the exact same way in future versions of JAX. Nevertheless, they might be useful during development and testing
 and have been tested using JAX 0.5.3 as of writing.
 
 <!--more-->
@@ -90,7 +90,7 @@ write_debug_graph(
 
 {{<image src="simple_function.graph.svg" title="The output graph" >}}
 
-If you open [the generated SVG image](simple_function.graph.svg) in a webbrowser, you can also read additional metadata by hovering over nodes.
+If you open [the generated SVG image](simple_function.graph.svg) in a web browser, you can also read additional metadata by hovering over nodes.
 
 ## Visualizing the HLO Graph without code modifications
 

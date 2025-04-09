@@ -40,7 +40,7 @@ for line in text.splitlines()[1:]:
     print("")
 ```
 
-All below content is extracted from https://github.com/openxla/xla and licensed under the [Apache License 2.0](https://github.com/openxla/xla/blob/main/LICENSE).
+All content below is extracted from https://github.com/openxla/xla and licensed under the [Apache License 2.0](https://github.com/openxla/xla/blob/main/LICENSE).
 
 
 -------------

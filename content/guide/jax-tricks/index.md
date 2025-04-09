@@ -48,7 +48,8 @@ the [GitHub repository](https://github.com/Findus23/jax-array-info/).
 
 - [Source](https://bnikolic.co.uk/blog/python/jax/2022/02/22/jax-outputgraph-rev.html)
 
-One useful thing during debugging is to visualize the computational graph JAX creates (especially after JIT compilation) as a visual graph.
+One useful thing during debugging is to visualize the computational graph JAX creates (especially after JIT compilation)
+as a visual graph.
 
 ```python
 import subprocess
@@ -71,7 +72,8 @@ def write_debug_graph(compiled: Compiled, output: Path):
         subprocess.run(["dot", "-Tsvg", graph_file], stdout=f)
 ```
 
-Using the two above helper functions we can take a jit-compiled (and lowered) function and let XLA generate a [Graphviz](https://graphviz.org/) 
+Using the two above helper functions we can take a jit-compiled (and lowered) function and let XLA generate
+a [Graphviz](https://graphviz.org/)
 graph for all operations. The call to `dot -Tsvg input.dot` requires `graphviz` to be installed.
 
 ```python
@@ -90,15 +92,18 @@ write_debug_graph(
 
 {{<image src="simple_function.graph.svg" title="The output graph" >}}
 
-If you open [the generated SVG image](simple_function.graph.svg) in a web browser, you can also read additional metadata by hovering over nodes.
+If you open [the generated SVG image](simple_function.graph.svg) in a web browser, you can also read additional metadata
+by hovering over nodes.
 
 ## Visualizing the HLO Graph without code modifications
 
 - Documentation? This feature doesn't seem to be documented anywhere
 
-There is an alternative way to achieve the same result as the previous section (compute graph as a figure), but without any code modifications and for all intermediate functions (before and after optimization).
+There is an alternative way to achieve the same result as the previous section (compute graph as a figure), but without
+any code modifications and for all intermediate functions (before and after optimization).
 
-For this we call our python script with the [`--xla_dump_to=tmp`](/all-xla-options/#xla_dump_to) flag to dump all intermediate XLA results into tmp/ and 
+For this we call our python script with the [`--xla_dump_to=tmp`](/all-xla-options/#xla_dump_to) flag to dump all
+intermediate XLA results into tmp/ and
 [`--xla_dump_hlo_as_html=true`](/all-xla-options/#xla_dump_hlo_as_html) to also generate HTML output.
 
 ```python
@@ -112,18 +117,35 @@ input = jax.numpy.zeros((20,))
 
 simple_function(input)
 ```
+
 ```bash
 ➜ XLA_FLAGS="--xla_dump_hlo_as_html=true --xla_dump_to=tmp" python dot_test2.py
 ```
 
-The [resulting output](/jax-tips-and-tricks-html) in tmp/ when opened in a browser will be similar to the one created in the previous section,
+The [resulting output](/jax-tips-and-tricks-html) in tmp/ when opened in a browser will be similar to the one created in
+the previous section,
 but with interactive zoom and pan.
 
 ## Additional XLA options
 
 - [Documentation](https://docs.jax.dev/en/latest/xla_flags.html) (only a small subset)
 
-Only a small subset of the possible XLA options are documented in the JAX documentation. [The full list](/all-xla-options/) can be extracted from the XLA `--help` command.
+Only a small subset of the possible XLA options are documented in the JAX
+documentation. [The full list](/all-xla-options/) can be extracted from the XLA `--help` command.
+
+```python
+import os
+
+def add_xla_flag(flag: str) -> None:
+    if "XLA_FLAGS" not in os.environ:
+        os.environ["XLA_FLAGS"] = flag
+        return
+
+    os.environ["XLA_FLAGS"] = os.environ["XLA_FLAGS"] + " " + flag
+
+add_xla_flag('--xla_force_host_platform_device_count=4')
+add_xla_flag('--xla_dump_to=xla_dump_directory')
+```
 
 ## print_environment_info
 

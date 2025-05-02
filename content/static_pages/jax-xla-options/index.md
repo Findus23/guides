@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of JAX 0.5.3.
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of JAX/jaxlib 0.6.0.
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -682,7 +682,7 @@ Use persistent per-process XLA:GPU collectives cliques
 The legacy flag for setting GPU graph level. Use xla_gpu_enable_command_buffer in new use cases. 0 = off; 1 = capture fusions and memcpys; 2 = capture gemms; 3 = capture convolutions.
 
 ## --xla_gpu_enable_command_buffer
-- default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN, CONDITIONAL"`
+- default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN"`
 - type: **string**
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
@@ -728,6 +728,12 @@ If specified, dumps HLO before and after optimization passes in the pass pipelin
 - type: **bool**
 
 Enable dumping MLIR using pretty print form. If set to false, the dumped MLIR will be in the llvm-parsable format and can be processed by mlir-opt tools. Pretty print form is not legal MLIR.
+
+## --xla_dump_full_hlo_config
+- default: `true`
+- type: **bool**
+
+Enable dumping the full HloModuleConfig proto.
 
 ## --xla_gpu_enable_custom_fusions
 - default: `false`
@@ -782,12 +788,6 @@ if true, running gpu executable will require exclusive lock on gpu, so there is 
 - type: **bool**
 
 Enables NCCL communicator splitting which allows sharing NCCL resources between different NCCL cliques.
-
-## --xla_gpu_enable_nccl_per_stream_comms
-- default: `false`
-- type: **bool**
-
-A separate NCCL communicator will be created for each stream that a NCCL collective is executed on. This can lead to higher performance if NCCL collectives are issued concurrently at the cost of more GPU memory usage.
 
 ## --xla_gpu_nccl_init_max_rank_per_root_ratio
 - default: `0`
@@ -867,12 +867,6 @@ Slop factor for memory limits in XLA:GPU. This flag serves as a multiplier appli
 
 Enable async stream to have the highest priority.
 
-## --xla_gpu_enable_pipelined_collectives
-- default: `false`
-- type: **bool**
-
-Enable pipelinling of collective instructions (all-reduce, all-gather, and reduce-scatter).
-
 ## --xla_gpu_enable_pipelined_all_reduce
 - default: `false`
 - type: **bool**
@@ -927,6 +921,12 @@ Use Triton-based matrix multiplication.
 
 Enable lowering Triton GEMM fusions through the generic Triton emitter.
 
+## --xla_gpu_unsupported_enable_triton_multi_output_fusion
+- default: `false`
+- type: **bool**
+
+Enable Triton multi-output fusions.
+
 ## --xla_gpu_verify_triton_fusion_numerics
 - default: `false`
 - type: **bool**
@@ -950,12 +950,6 @@ Use Triton-based matrix multiplication for any GEMM it supports without filterin
 - type: **bool**
 
 Enable (slow) search for the Triton GEMM fusion tilings.
-
-## --xla_gpu_enable_priority_fusion
-- default: `true`
-- type: **bool**
-
-[Deprecated, do not use]
 
 ## --xla_gpu_experimental_enable_subchannel_dequantisation_fusion
 - default: `false`
@@ -1000,7 +994,7 @@ Memory budget in GB per device for AutoSharding.
 Enabled when xla_gpu_auto_spmd_partitioning_memory_budget_gb is 0. The memory budget is set to xla_gpu_auto_spmd_partitioning_memory_budget_ratio times the estimated memory usage lower bound.
 
 ## --xla_gpu_triton_gemm_disable_reduced_precision_reduction
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Forces any reductions during matrix multiplications to use the accumulator type and not the output type. The precision of the dot operation may not increase that much if there is output fusion.
@@ -1045,7 +1039,7 @@ Enable fusion for reduction epilogues
 - default: `false`
 - type: **bool**
 
-Allow early return when acquiring NCCL cliques
+[Deprecated, do not use].
 
 ## --xla_gpu_cublas_fallback
 - default: `true`
@@ -1070,12 +1064,6 @@ Replace custom calls with noop operations.
 - type: **bool**
 
 Enable double buffering for while loop
-
-## --xla_gpu_ensure_minor_dot_contraction_dims
-- default: `false`
-- type: **bool**
-
-Ensure that the contracting dimensions for matmul operands are the most minor by changing layouts accordingly
 
 ## --xla_gpu_filter_kernels_spilling_registers_on_autotuning
 - default: `true`
@@ -1130,6 +1118,12 @@ This controls whether to enable windowed einsum (collective matmul) based on the
 - type: **bool**
 
 Currently used to enable MMA_V3 for Hopper in Triton
+
+## --xla_gpu_experimental_enable_dynamic_dot_search_space
+- default: `false`
+- type: **bool**
+
+Enable dynamically generating and pruning the autotuning search space for Triton dot fusions, based on the properties of the problem and hardware (shapes, instructions, GPU limits, etc.).
 
 ## --xla_gpu_experimental_enable_fusion_block_level_rewriter
 - default: `false`
@@ -1306,7 +1300,7 @@ Dot merger pass threshold to be set in MB.
 Enable optimizations that assume finite math, i.e., no NaN.
 
 ## --xla_gpu_experimental_stream_annotation
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable the experimental explicit stream annotation support. If false, the annotations are ignored.
@@ -1329,11 +1323,23 @@ Experimental: Make unset entry computation layout mean auto layout instead of de
 
 Enable the scatter determinism expander, an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance.Note that even when this flag is disabled, scatter operations may still be deterministic, although with additional overhead.
 
+## --xla_gpu_unsupported_enable_all_reduce_decomposer
+- default: `false`
+- type: **bool**
+
+Internal: Enable the AllReduceDecomposer, an unsupported pass that rewrites small all-reduce operations as a sequence of all-gather and reduce operations.
+
 ## --xla_gpu_unsupported_enable_ragged_all_to_all_decomposer
 - default: `false`
 - type: **bool**
 
 Internal: Enable the RaggedAllToAllDecomposer, an experimental pass that rewrites ragged-all-to-all as a dense all-to-all operation.
+
+## --xla_gpu_unsupported_use_all_reduce_one_shot_kernel
+- default: `false`
+- type: **bool**
+
+Internal: Enable the one-shot kernel for single-host all-reduce operations.
 
 ## --xla_gpu_unsupported_use_ragged_all_to_all_one_shot_kernel
 - default: `true`
@@ -1371,12 +1377,6 @@ Perform hash-based cycle detection in fixed-point loops.
 
 Enable sync collective combining.
 
-## --xla_allow_get_default_platform
-- default: `true`
-- type: **bool**
-
-If false, GetDefaultPlatform will cause an error if called.
-
 ## --xla_gpu_experimental_collective_cse_distance_threshold
 - default: `0`
 - type: **int64**
@@ -1389,3 +1389,26 @@ Set distance threshold for Collective CSE.
 
 If non empty will interpret this variable as a path for performance tables for collectives. Expects `xla.gpu.DeviceHloInstructionProfiles` proto.
 
+## --xla_unsupported_crash_on_hlo_pass_silent_hlo_change
+- default: `false`
+- type: **bool**
+
+Crash if a pass reports that it did not change the HLO but in fact it did.
+
+## --xla_unsupported_crash_on_hlo_pass_noop_change
+- default: `false`
+- type: **bool**
+
+Crash if a pass reports that it did change the HLO but in fact it did not.
+
+## --xla_gpu_experimental_matmul_perf_table_path
+- default: `""`
+- type: **string**
+
+If non empty will interpret this variable as a path for performance tables for matmuls. Expects `xla.gpu.DeviceHloInstructionProfiles` proto.
+
+## --xla_gpu_experimental_enable_split_k_rewrite
+- default: `false`
+- type: **bool**
+
+Enable the pass that splits GEMMs that underutilize the GPU load by splitting the K dimension using a heuristic.

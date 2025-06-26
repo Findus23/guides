@@ -25,7 +25,7 @@ You can install it using docker following [their guide](https://glitchtip.com/do
 
 - Python3
 - [poetry](https://python-poetry.org/)
-- Systemd (or something else to start services with
+- Systemd (or something else to start services with)
 - gunicorn (or something similar)
 - nginx (or another webserver)
 - PostgreSQL

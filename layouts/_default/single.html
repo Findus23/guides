@@ -22,8 +22,15 @@
                 {{ end }}
             </nav>
         </header>
-        {{ partial "toc.html" . }}
+        {{ if (and (or (gt .WordCount 400 ) .Params.toc) (not (or (eq .Params.toc false) (eq .Params.toc "end")))) }}
+            {{ partial "toc.html" . }}
+        {{ end }}
         {{ .Content }}
+        {{ if (eq .Params.toc "end") }}
+            <hr>
+            <h2>Table of Content</h2>
+            {{ partial "toc.html" . }}
+        {{ end }}
         <hr>
         {{ if not .Params.no_feedback }}
             <div class="alert info">You have any feedback or ideas to improve this? Contact me <a

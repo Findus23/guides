@@ -2,12 +2,12 @@
 title: "All XLA Options"
 slug: all-xla-options
 date: 2025-04-08
-toc: false
+toc: end
 description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of JAX/jaxlib 0.6.0.
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.6.2**.
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -79,7 +79,7 @@ When xla_cpu_enable_fast_math is true then this controls whether we forbid to ap
 - default: `true`
 - type: **bool**
 
-Enable fast floating point min/max lowering that always propagates NaNs.
+Enable fast floating point min/max lowering that might not propagate NaNs.
 
 ## --xla_gpu_enable_fast_min_max
 - default: `false`
@@ -207,11 +207,11 @@ Instrument the computation to collect per-HLO cycle counts
 
 Extra options to pass to a backend; comma-separated list of 'key=val' strings (=val may be omitted); no whitespace around commas.
 
-## --xla_cpu_use_mkl_dnn
+## --xla_cpu_use_onednn
 - default: `false`
 - type: **bool**
 
-Generate calls to MKL-DNN in the CPU backend.
+Call oneDNN thunks for matmul and convolution fusions in the CPU backend.
 
 ## --xla_cpu_use_acl
 - default: `false`
@@ -513,12 +513,6 @@ If true, XLA CPU generates code to call TraceMe::Activity{Start|End} around HLO 
 
 If true, XLA GPU falls back to the driver if ptxas is not found. Note that falling back to the driver can have drawbacks like using more memory and/or other bugs during compilation, so we recommend setting this flag to false.
 
-## --xla_gpu_unsafe_pipelined_loop_annotator
-- default: `false`
-- type: **bool**
-
-If this option is true, then the while loop with rotate right pattern will be considered a pipelined while loop and the operations within the pipeline bubbles may be considered no-ops. Specifically, collective-permute may become a no-op for the iterations within pipeline bubble. This is an unsafe flag.
-
 ## --xla_multiheap_size_constraint_per_heap
 - default: `-1`
 - type: **int32**
@@ -771,6 +765,12 @@ Enable constant sharing between GPU executables
 
 Enables NCCL User Buffer Registration. collective_memory_size in the allocator config must also be set to a non-zero value that is large enough to meet peak collective memory usage.
 
+## --xla_gpu_experimental_enable_nvshmem
+- default: `false`
+- type: **bool**
+
+Enables NVSHMEM.
+
 ## --xla_gpu_temp_buffer_use_separate_color
 - default: `false`
 - type: **bool**
@@ -922,7 +922,7 @@ Use Triton-based matrix multiplication.
 Enable lowering Triton GEMM fusions through the generic Triton emitter.
 
 ## --xla_gpu_unsupported_enable_triton_multi_output_fusion
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable Triton multi-output fusions.
@@ -992,12 +992,6 @@ Memory budget in GB per device for AutoSharding.
 - type: **float**
 
 Enabled when xla_gpu_auto_spmd_partitioning_memory_budget_gb is 0. The memory budget is set to xla_gpu_auto_spmd_partitioning_memory_budget_ratio times the estimated memory usage lower bound.
-
-## --xla_gpu_triton_gemm_disable_reduced_precision_reduction
-- default: `true`
-- type: **bool**
-
-Forces any reductions during matrix multiplications to use the accumulator type and not the output type. The precision of the dot operation may not increase that much if there is output fusion.
 
 ## --xla_gpu_dump_autotuned_gemm_fusions
 - default: `false`
@@ -1120,7 +1114,7 @@ This controls whether to enable windowed einsum (collective matmul) based on the
 Currently used to enable MMA_V3 for Hopper in Triton
 
 ## --xla_gpu_experimental_enable_dynamic_dot_search_space
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable dynamically generating and pruning the autotuning search space for Triton dot fusions, based on the properties of the problem and hardware (shapes, instructions, GPU limits, etc.).
@@ -1172,6 +1166,12 @@ Threshold until which elemental dot emitter is preferred for GEMMs (minimum comb
 - type: **bool**
 
 Whether to use memcpy for local p2p communication.
+
+## --xla_gpu_use_inprocess_lld
+- default: `false`
+- type: **bool**
+
+Whether to use lld as a library for the linking.
 
 ## --xla_gpu_dump_autotune_logs_to
 - default: `""`
@@ -1274,6 +1274,18 @@ Set timeout for Rendezvous stuck warning
 - type: **int32**
 
 Set timeout for Rendezvous termination
+
+## --xla_gpu_first_collective_call_warn_stuck_timeout_seconds
+- default: `20`
+- type: **int32**
+
+Set timeout for First Collective Call Rendezvous stuck warning
+
+## --xla_gpu_first_collective_call_terminate_timeout_seconds
+- default: `40`
+- type: **int32**
+
+Set timeout for First Collective Call Rendezvous termination
 
 ## --xla_gpu_experimental_disable_binary_libraries
 - default: `false`
@@ -1412,3 +1424,10 @@ If non empty will interpret this variable as a path for performance tables for m
 - type: **bool**
 
 Enable the pass that splits GEMMs that underutilize the GPU load by splitting the K dimension using a heuristic.
+
+## --xla_gpu_experimental_enable_triton_tma
+- default: `false`
+- type: **bool**
+
+Enable Triton's TMA loads/stores for arguments where applicable.
+

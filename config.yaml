@@ -18,6 +18,10 @@ markup:
     endLevel: 5
     ordered: false
     startLevel: 2
+  goldmark:
+    extensions:
+      typographer:
+        enDash: "--"
 permalinks:
   guide: /:slug/
   static_pages: /:slug/

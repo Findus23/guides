@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.6.2**.
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.7.0**.
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -30,14 +30,21 @@ out = subprocess.run(
 text = out.stderr.decode().split("Flags:")[2].rstrip()
 
 for line in text.splitlines()[1:]:
+    print("")
+    if not line.lstrip().startswith("--"):
+        print(line)
+        continue
     _, arg, type, description = line.split("\t", maxsplit=3)
     arg_name, default = arg.strip().split("=")
     print(f"## {arg_name}")
     print(f"- default: `{default}`")
     print(f"- type: **{type}**")
+    if description.startswith("[Stable]"):
+        print(f"- **[Stable]**")
+        description = description.replace("[Stable]", "").lstrip()
     print("")
     print(description)
-    print("")
+
 ```
 
 All content below is extracted from https://github.com/openxla/xla and licensed under the [Apache License 2.0](https://github.com/openxla/xla/blob/main/LICENSE).
@@ -213,6 +220,20 @@ Extra options to pass to a backend; comma-separated list of 'key=val' strings (=
 
 Call oneDNN thunks for matmul and convolution fusions in the CPU backend.
 
+## --xla_cpu_experimental_onednn_fusion_type
+- default: `""`
+- type: **string**
+
+Comma-separated list of oneDNN fusion types to be enabled; no whitespace around commas. Two ways to pass values:
+
+  1. Exact type names. This overwrites the default setting.
+
+  2. '+' or '-' prefix: This adds or removes a fusion type from the default list. Cannot be mixed with the overwrite mode. Every item must have the sign prefix.
+
+Available fusion types: dot, eltwise, and reduce.
+
+The default list is currently empty.
+
 ## --xla_cpu_use_acl
 - default: `false`
 - type: **bool**
@@ -237,11 +258,29 @@ Use Thunk-based runtime for the CPU backend.
 
 Use XNNPACK for supported operations.
 
+## --xla_cpu_experimental_xnn_fusion_type
+- default: `""`
+- type: **string**
+
+Comma-separated list of XNN fusion types to be enabled.; no whitespace around commas. Two ways to pass values:
+
+  1. Exact type names. This overwrites the default setting.
+
+  2. '+' or '-' prefix: This adds or removes a fusion type from the default list. Cannot be mixed with the overwrite mode. Every item must have the sign prefix.
+
+Available fusion types: dot, eltwise, and reduce.
+
+The default list is currently empty.
+
 ## --xla_cpu_experimental_xnn_graph_fusion_mode
 - default: `"XNN_GRAPH_FUSION_MODE_DISABLED"`
 - type: **string**
 
-Controls XnnGraphFusion pass. `XNN_GRAPH_FUSION_MODE_DISABLED` - default value, `XNN_GRAPH_FUSION_MODE_GREEDY` - greedy extraction of XNNPACK-compatible subgraphs starting from root instructions.
+Controls XnnGraphFusion pass.   `XNN_GRAPH_FUSION_MODE_DISABLED` - default value,
+
+  `XNN_GRAPH_FUSION_MODE_GREEDY` - greedy extraction of XNNPACK-compatible subgraphs starting from root instructions,
+
+  `XNN_GRAPH_FUSION_MODE_GREEDY_SLINKY` - same as GREEDY plus operations that are only supported with slinky.
 
 ## --xla_cpu_parallel_codegen_split_count
 - default: `32`
@@ -273,6 +312,12 @@ Preferred vector width for the XLA:CPU LLVM backend.
 
 Maximum ISA that XLA:CPU LLVM backend will codegen, i.e., it will not use newer instructions. Available values: SSE4_2, AVX, AVX2, AVX512, AVX512_VNNI, AVX512_BF16, AMX, and AMX_FP16. (`AMX` will enable both `AMX_BF16` and `AMX_INT8` instructions.)
 
+## --xla_cpu_emitter_verification_level
+- default: `0`
+- type: **int32**
+
+Sets how often we verify the emitted modules. Higher levels mean more frequent verification. Currently supported: 0, 1.
+
 ## --xla_gpu_crash_on_verification_failures
 - default: `false`
 - type: **bool**
@@ -288,6 +333,7 @@ Upgrades warnings to failures when all algorithms fail conv autotuning.
 ## --xla_gpu_autotune_level
 - default: `4`
 - type: **int32**
+- **[Stable]**
 
 Set GEMM and Convolution auto-tuning level. 0 = off; 1 = on; 2 = on+init; 3 = on+init+reinit; 4 = on+init+reinit+check; 5 = on+init+reinit+check and skip WRONG_RESULT solutions. See also the related flag xla_gpu_autotune_gemm_rtol. Remark that, setting the level to 5 only makes sense if you are sure that the reference (first in the list) solution is numerically CORRECT. Otherwise, the autotuner might discard many other correct solutions based on the failed BufferComparator test.
 
@@ -558,6 +604,7 @@ Enables while loop unrolling features. `WHILE_LOOP_UNROLLING_DOUBLE_BUFFER` unro
 ## --xla_gpu_all_reduce_combine_threshold_bytes
 - default: `31457287`
 - type: **int64**
+- **[Stable]**
 
 Size threshold (in bytes) for the GPU all-reduce combiner.
 
@@ -570,6 +617,7 @@ Size threshold (in bytes) for the GPU all-gather combiner.
 ## --xla_gpu_reduce_scatter_combine_threshold_bytes
 - default: `31457287`
 - type: **int64**
+- **[Stable]**
 
 Size threshold (in bytes) for the GPU reduce-scatter combiner.
 
@@ -744,8 +792,9 @@ Limits custom fusion only to fusions which match this regular expression. Defaul
 ## --xla_gpu_enable_dynamic_slice_fusion
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
-Whether to enable XLA address computation fusion
+Whether to enable address computation fusion to optimize dynamic-slice and dynamic-update-slice operations.
 
 ## --xla_gpu_nccl_termination_timeout_seconds
 - default: `-1`
@@ -828,6 +877,7 @@ Dump the schedule from the latency-hiding scheduler.
 ## --xla_gpu_enable_latency_hiding_scheduler
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
 Enable latency-hiding scheduler for XLA:GPU
 
@@ -870,18 +920,21 @@ Enable async stream to have the highest priority.
 ## --xla_gpu_enable_pipelined_all_reduce
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
 Enable pipelinling of all-reduce instructions.
 
 ## --xla_gpu_enable_pipelined_all_gather
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
 Enable pipelinling of all-gather instructions.
 
 ## --xla_gpu_enable_pipelined_reduce_scatter
 - default: `true`
 - type: **bool**
+- **[Stable]**
 
 Enable pipelinling of reduce-scatter instructions.
 
@@ -894,6 +947,7 @@ Enable pipelinling of P2P instructions.
 ## --xla_gpu_collective_permute_decomposer_threshold
 - default: `9223372036854775807`
 - type: **int64**
+- **[Stable]**
 
 Collective permute decomposer threshold.
 
@@ -912,14 +966,15 @@ The partitioning algorithm to be used in the PartitionAssignment pass
 ## --xla_gpu_enable_triton_gemm
 - default: `true`
 - type: **bool**
+- **[Stable]**
 
-Use Triton-based matrix multiplication.
+Whether to use Triton-based matrix multiplication.
 
-## --xla_gpu_unsupported_enable_generic_triton_emitter_for_gemms
-- default: `false`
-- type: **bool**
+## --xla_gpu_unsupported_generic_triton_emitter_features
+- default: `""`
+- type: **string**
 
-Enable lowering Triton GEMM fusions through the generic Triton emitter.
+Comma-separated list of individual features of generic Triton emitter. Use +/- prefix to modify the default list, or list features to enable explicitly - that will override the defaults.
 
 ## --xla_gpu_unsupported_enable_triton_multi_output_fusion
 - default: `true`
@@ -948,8 +1003,9 @@ Use Triton-based matrix multiplication for any GEMM it supports without filterin
 ## --xla_gpu_exhaustive_tiling_search
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
-Enable (slow) search for the Triton GEMM fusion tilings.
+Search for Triton GEMM tilings exhaustively during autotuning. This increases the compile time.
 
 ## --xla_gpu_experimental_enable_subchannel_dequantisation_fusion
 - default: `false`
@@ -1038,8 +1094,9 @@ Enable fusion for reduction epilogues
 ## --xla_gpu_cublas_fallback
 - default: `true`
 - type: **bool**
+- **[Stable]**
 
-Allow GEMM fusion autotuning to fall back to cuBLAS when that is faster.
+Whether to allow GEMM fusion autotuning to fall back to cuBLAS when it is faster than Triton.
 
 ## --xla_gpu_cudnn_gemm_fusion_level
 - default: `0`
@@ -1056,6 +1113,7 @@ Replace custom calls with noop operations.
 ## --xla_gpu_enable_while_loop_double_buffering
 - default: `false`
 - type: **bool**
+- **[Stable]**
 
 Enable double buffering for while loop
 
@@ -1113,12 +1171,6 @@ This controls whether to enable windowed einsum (collective matmul) based on the
 
 Currently used to enable MMA_V3 for Hopper in Triton
 
-## --xla_gpu_experimental_enable_dynamic_dot_search_space
-- default: `true`
-- type: **bool**
-
-Enable dynamically generating and pruning the autotuning search space for Triton dot fusions, based on the properties of the problem and hardware (shapes, instructions, GPU limits, etc.).
-
 ## --xla_gpu_experimental_enable_fusion_block_level_rewriter
 - default: `false`
 - type: **bool**
@@ -1136,6 +1188,18 @@ Use libnvptxcompiler for PTX-to-GPU-assembly compilation instead of calling ptxa
 - type: **bool**
 
 Use libnvjitlink for PTX-to-GPU-assembly compilation instead of calling ptxas.
+
+## --xla_gpu_nccl_async_execution
+- default: `false`
+- type: **bool**
+
+Whether to use asynchronous execution for NCCL communicators
+
+## --xla_gpu_nccl_blocking_communicators
+- default: `true`
+- type: **bool**
+
+Whether to use non-blocking NCCL communicators
 
 ## --xla_gpu_nccl_collective_max_nchannels
 - default: `0`
@@ -1302,6 +1366,7 @@ Ignore channel ids for collective operations.
 ## --xla_gpu_dot_merger_threshold_mb
 - default: `32`
 - type: **int32**
+- **[Stable]**
 
 Dot merger pass threshold to be set in MB.
 
@@ -1383,11 +1448,11 @@ Crash if HloPassFix can not converge after a fixed number of iterations.
 
 Perform hash-based cycle detection in fixed-point loops.
 
-## --xla_gpu_experimental_enable_sync_collective_combining
-- default: `false`
+## --xla_gpu_experimental_enable_heuristic_collective_combining
+- default: `true`
 - type: **bool**
 
-Enable sync collective combining.
+Enable heuristic based collective combining.
 
 ## --xla_gpu_experimental_collective_cse_distance_threshold
 - default: `0`
@@ -1431,3 +1496,14 @@ Enable the pass that splits GEMMs that underutilize the GPU load by splitting th
 
 Enable Triton's TMA loads/stores for arguments where applicable.
 
+## --xla_gpu_experimental_enable_command_buffer_on_thunks
+- default: `false`
+- type: **bool**
+
+Enables an experimental feature for command buffer conversion on thunks.
+
+## --xla_gpu_experimental_use_autotuner_pass
+- default: `false`
+- type: **bool**
+
+If true, use the AutotunerPass to autotune fusions, instead of the gemm_fusion_autotuner.

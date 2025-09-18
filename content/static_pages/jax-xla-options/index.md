@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.7.0**.
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.7.2** (XLA [0fccb8a6](https://github.com/openxla/xla/commit/0fccb8a6)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -17,17 +17,23 @@ Keep in mind that most of them are experimental and don't depend on their behavi
 import subprocess
 import sys
 
-out = subprocess.run(
-    [
-        sys.executable,
-        "-c",
-        "import jax;jax.numpy.zeros(10)"
-    ],
-    env={"XLA_FLAGS": "--help"},
-    capture_output=True
-)
+use_jax = False
 
-text = out.stderr.decode().split("Flags:")[2].rstrip()
+if use_jax:
+    out = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import jax;jax.numpy.zeros(10)"
+        ],
+        env={"XLA_FLAGS": "--help"},
+        capture_output=True
+    )
+    text = out.stderr.decode().split("Flags:")[2].rstrip()
+else:
+    # read from output of `bazel run //xla/tools:hlo-opt -- --help`
+    with open("out.txt") as f:
+        text = f.read().rstrip()
 
 for line in text.splitlines()[1:]:
     print("")
@@ -244,16 +250,16 @@ Generate calls to ACL (Arm Compute Library) in the CPU backend.
 - default: `true`
 - type: **bool**
 
-Use fusion emitters for code generation in the CPU backend. Note: only works with --xla_cpu_use_thunk_runtime=true.
+Use fusion emitters for code generation in the CPU backend.
 
 ## --xla_cpu_use_thunk_runtime
 - default: `true`
 - type: **bool**
 
-Use Thunk-based runtime for the CPU backend.
+Deprecated.
 
 ## --xla_cpu_use_xnnpack
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Use XNNPACK for supported operations.
@@ -280,7 +286,7 @@ Controls XnnGraphFusion pass.   `XNN_GRAPH_FUSION_MODE_DISABLED` - default value
 
   `XNN_GRAPH_FUSION_MODE_GREEDY` - greedy extraction of XNNPACK-compatible subgraphs starting from root instructions,
 
-  `XNN_GRAPH_FUSION_MODE_GREEDY_SLINKY` - same as GREEDY plus operations that are only supported with slinky.
+  `XNN_GRAPH_FUSION_MODE_GREEDY_SLINKY` - same as GREEDY plus operations that are only supported with slinky,  `XNN_GRAPH_FUSION_MODE_BYPASS_COST_MODEL` - test-only value for disabling XNNPACK cost models.
 
 ## --xla_cpu_parallel_codegen_split_count
 - default: `32`
@@ -681,7 +687,7 @@ Enable allreduce reassociation on allreduces that are converted to a wider type.
 
 Dump LLVM IR.
 
-## --xla_gpu_dump_hlo_unoptimized_snapshots
+## --xla_dump_hlo_unoptimized_snapshots
 - default: `false`
 - type: **bool**
 
@@ -717,12 +723,6 @@ Use cuBLASLt for GEMMs when possible.
 
 Use persistent per-process XLA:GPU collectives cliques
 
-## --xla_gpu_graph_level
-- default: `1`
-- type: **int32**
-
-The legacy flag for setting GPU graph level. Use xla_gpu_enable_command_buffer in new use cases. 0 = off; 1 = capture fusions and memcpys; 2 = capture gemms; 3 = capture convolutions.
-
 ## --xla_gpu_enable_command_buffer
 - default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN"`
 - type: **string**
@@ -745,7 +745,13 @@ Capture a region as a function to be launched as cuda graph if the number of mov
 - default: `false`
 - type: **bool**
 
-Identify concurrent regions in gpu graphs and execute them concurrently.
+[Deprecated, do not use]
+
+## --xla_gpu_command_buffer_scheduling_mode
+- default: `"LHS"`
+- type: **string**
+
+The command buffer scheduling mode for XLA:GPU.
 
 ## --xla_cmd_buffer_trace_cache_size
 - default: `16`
@@ -777,12 +783,6 @@ Enable dumping MLIR using pretty print form. If set to false, the dumped MLIR wi
 
 Enable dumping the full HloModuleConfig proto.
 
-## --xla_gpu_enable_custom_fusions
-- default: `false`
-- type: **bool**
-
-Whether to enable XLA custom fusions
-
 ## --xla_gpu_enable_custom_fusions_re
 - default: `""`
 - type: **string**
@@ -813,6 +813,12 @@ Enable constant sharing between GPU executables
 - type: **bool**
 
 Enables NCCL User Buffer Registration. collective_memory_size in the allocator config must also be set to a non-zero value that is large enough to meet peak collective memory usage.
+
+## --xla_gpu_experimental_enable_nccl_symmetric_buffers
+- default: `false`
+- type: **bool**
+
+Enables NCCL symmetric buffer registration.
 
 ## --xla_gpu_experimental_enable_nvshmem
 - default: `false`
@@ -888,7 +894,7 @@ Enable latency-hiding scheduler for XLA:GPU
 Enable analytical latency estimator for latency-hiding scheduler for XLA:GPU
 
 ## --xla_gpu_enable_analytical_sol_latency_estimator
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable analytical Speed-of-Light latency estimator for latency-hiding scheduler for XLA:GPU, must be used without xla_gpu_enable_analytical_latency_estimator. It can also benefit from user-passed options in xla_gpu_analytical_latency_estimator_options
@@ -971,7 +977,7 @@ The partitioning algorithm to be used in the PartitionAssignment pass
 Whether to use Triton-based matrix multiplication.
 
 ## --xla_gpu_unsupported_generic_triton_emitter_features
-- default: `""`
+- default: `"GENERIC_TRITON_EMITTER_ENABLE_NESTED_GEMM"`
 - type: **string**
 
 Comma-separated list of individual features of generic Triton emitter. Use +/- prefix to modify the default list, or list features to enable explicitly - that will override the defaults.
@@ -1060,6 +1066,12 @@ Dumps autotuned GEMM fusions to the directory specified by xla_dump_to or stdout
 - type: **string**
 
 Overrides the GEMM autotuner to use the specified (AutotuneResult::TritonGemmKey) textproto configuration for all Triton GEMM fusions. (You can get such textprotos from the debug logs of the GEMM autotuner.)
+
+## --xla_gpu_command_buffer_unroll_loops
+- default: `false`
+- type: **bool**
+
+During command buffer lowering, unroll the loop command if loop has known loop count.
 
 ## --xla_gpu_copy_insertion_use_region_analysis
 - default: `false`
@@ -1395,7 +1407,7 @@ This controls how many in-flight collectives latency hiding scheduler can schedu
 Experimental: Make unset entry computation layout mean auto layout instead of default layout in HLO when run through PjRT. In other cases (StableHLO or non-PjRT) the auto layout is already used.
 
 ## --xla_gpu_enable_scatter_determinism_expander
-- default: `true`
+- default: `false`
 - type: **bool**
 
 Enable the scatter determinism expander, an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance.Note that even when this flag is disabled, scatter operations may still be deterministic, although with additional overhead.
@@ -1466,17 +1478,23 @@ Set distance threshold for Collective CSE.
 
 If non empty will interpret this variable as a path for performance tables for collectives. Expects `xla.gpu.DeviceHloInstructionProfiles` proto.
 
+## --xla_unsupported_crash_on_hlo_pass_noop_change
+- default: `false`
+- type: **bool**
+
+Crash if a pass reports that it did change the HLO but in fact it did not.
+
 ## --xla_unsupported_crash_on_hlo_pass_silent_hlo_change
 - default: `false`
 - type: **bool**
 
 Crash if a pass reports that it did not change the HLO but in fact it did.
 
-## --xla_unsupported_crash_on_hlo_pass_noop_change
+## --xla_disable_automatic_host_compute_offload
 - default: `false`
 - type: **bool**
 
-Crash if a pass reports that it did change the HLO but in fact it did not.
+Return an error if HostOffloader would have automatically offloaded some compute to the host.
 
 ## --xla_gpu_experimental_matmul_perf_table_path
 - default: `""`
@@ -1497,7 +1515,7 @@ Enable the pass that splits GEMMs that underutilize the GPU load by splitting th
 Enable Triton's TMA loads/stores for arguments where applicable.
 
 ## --xla_gpu_experimental_enable_command_buffer_on_thunks
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enables an experimental feature for command buffer conversion on thunks.
@@ -1507,3 +1525,9 @@ Enables an experimental feature for command buffer conversion on thunks.
 - type: **bool**
 
 If true, use the AutotunerPass to autotune fusions, instead of the gemm_fusion_autotuner.
+
+## --xla_detect_unstable_reductions
+- default: `"UNSTABLE_REDUCTION_DETECTION_MODE_NONE"`
+- type: **string**
+
+Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.

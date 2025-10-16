@@ -1,5 +1,5 @@
 ---
-title: "All XLA Options"
+title: "All XLA Options/Flags"
 slug: all-xla-options
 date: 2025-04-08
 toc: end
@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.7.2** (XLA [0fccb8a6](https://github.com/openxla/xla/commit/0fccb8a6)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.8.0** (XLA [9f150f6](https://github.com/openxla/xla/commit/9f150f6)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -225,6 +225,12 @@ Extra options to pass to a backend; comma-separated list of 'key=val' strings (=
 - type: **bool**
 
 Call oneDNN thunks for matmul and convolution fusions in the CPU backend.
+
+## --xla_cpu_experimental_onednn_custom_call
+- default: `false`
+- type: **bool**
+
+Call oneDNN custom call thunks in the CPU backend.
 
 ## --xla_cpu_experimental_onednn_fusion_type
 - default: `""`
@@ -729,12 +735,6 @@ Use persistent per-process XLA:GPU collectives cliques
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
 
-## --legacy_command_buffer_custom_call_targets
-- default: `""`
-- type: **string**
-
-Comma-separated list of custom call targets with legacy registry API (non FFI API), whose targets supports lowering to command buffer custom command, i.e., custom call target supports cuda-graph capturing for CUDA devices.
-
 ## --xla_gpu_graph_min_graph_size
 - default: `5`
 - type: **int32**
@@ -782,12 +782,6 @@ Enable dumping MLIR using pretty print form. If set to false, the dumped MLIR wi
 - type: **bool**
 
 Enable dumping the full HloModuleConfig proto.
-
-## --xla_gpu_enable_custom_fusions_re
-- default: `""`
-- type: **string**
-
-Limits custom fusion only to fusions which match this regular expression. Default is all custom fusions registerered in a current process.
 
 ## --xla_gpu_enable_dynamic_slice_fusion
 - default: `false`
@@ -849,12 +843,6 @@ Enables NCCL communicator splitting which allows sharing NCCL resources between 
 - type: **int64**
 
 Maximum number of ranks associated with a root rank to initialize a NCCL communicator via ncclCommInitRankScalable. A value of zero will lead to a single root.
-
-## --xla_gpu_redzone_scratch_max_megabytes
-- default: `4096`
-- type: **int64**
-
-Max size (in megabytes) for the GPU redzone scratch allocator.
 
 ## --xla_gpu_redzone_padding_bytes
 - default: `8388608`
@@ -1177,12 +1165,6 @@ Threshold to enable windowed einsum (collective matmul) in MB.Einsums that have 
 
 This controls whether to enable windowed einsum (collective matmul) based on the sum of sizes of 2 operands if set >= 0.If set >= 0, xla_gpu_threshold_for_windowed_einsum_mib is ignored.Default is -1
 
-## --xla_gpu_enable_triton_hopper
-- default: `false`
-- type: **bool**
-
-Currently used to enable MMA_V3 for Hopper in Triton
-
 ## --xla_gpu_experimental_enable_fusion_block_level_rewriter
 - default: `false`
 - type: **bool**
@@ -1236,6 +1218,12 @@ Whether to run windowed einsum using multiple compute streams.
 - type: **int64**
 
 Threshold until which elemental dot emitter is preferred for GEMMs (minimum combined number of elements of both matrices in non-batch dimensions to be considered for a rewrite).
+
+## --xla_gpu_use_embeded_device_lib
+- default: `false`
+- type: **bool**
+
+Whether to use embeded bitcode library in codegen.
 
 ## --xla_gpu_use_memcpy_local_p2p
 - default: `false`
@@ -1302,6 +1290,12 @@ Experimental: Maintain a per-fusion autotune cache in the given directory. XLA w
 - type: **string**
 
 Experimental: Specify the behavior of per kernel autotuning cache. Supported modes: read (provides readonly access to the cache), update (loads if the cache exists, runs autotuning and dumps the result otherwise). Default: update.
+
+## --xla_gpu_experimental_autotuner_cache_dir
+- default: `""`
+- type: **string**
+
+Experimental: Specify the directory to read/write autotuner cache to.
 
 ## --xla_enable_command_buffers_during_profiling
 - default: `false`
@@ -1424,6 +1418,18 @@ Internal: Enable the AllReduceDecomposer, an unsupported pass that rewrites smal
 
 Internal: Enable the RaggedAllToAllDecomposer, an experimental pass that rewrites ragged-all-to-all as a dense all-to-all operation.
 
+## --xla_gpu_unsupported_enable_ragged_all_to_all_multi_host_decomposer
+- default: `false`
+- type: **bool**
+
+Internal: Enable the RaggedAllToAllMultiHostDecomposer, an experimental pass to decompose ragged-all-to-all operation in intra-host and inter-host parts.
+
+## --xla_gpu_unsupported_override_fast_interconnect_slice_size
+- default: `0`
+- type: **int64**
+
+Internal: Override the number of devices in the fast interconnect domain. Default is 0, which means the number of devices is not overridden.
+
 ## --xla_gpu_unsupported_use_all_reduce_one_shot_kernel
 - default: `false`
 - type: **bool**
@@ -1514,6 +1520,12 @@ Enable the pass that splits GEMMs that underutilize the GPU load by splitting th
 
 Enable Triton's TMA loads/stores for arguments where applicable.
 
+## --xla_gpu_experimental_enable_triton_warp_specialization
+- default: `false`
+- type: **bool**
+
+Enable Triton's auto warp specialization feature where applicable.
+
 ## --xla_gpu_experimental_enable_command_buffer_on_thunks
 - default: `true`
 - type: **bool**
@@ -1531,3 +1543,33 @@ If true, use the AutotunerPass to autotune fusions, instead of the gemm_fusion_a
 - type: **string**
 
 Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.
+
+## --xla_gpu_experimental_use_raft_select_k
+- default: `false`
+- type: **bool**
+
+If true, use the raft::matrix::select_k implementation of TopK.
+
+## --xla_gpu_experimental_scaled_dot_with_triton
+- default: `false`
+- type: **bool**
+
+If true, use the Triton emitter for scaled dot.
+
+## --xla_cpu_collective_call_warn_stuck_timeout_seconds
+- default: `20`
+- type: **int32**
+
+Set timeout for Collective Call Rendezvous stuck warning
+
+## --xla_cpu_collective_call_terminate_timeout_seconds
+- default: `40`
+- type: **int32**
+
+Set timeout for Collective Call Rendezvous termination
+
+## --xla_keep_shardings_after_spmd
+- default: `false`
+- type: **bool**
+
+If true, keep shardings after SPMD.

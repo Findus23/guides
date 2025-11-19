@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.8.0** (XLA [9f150f6](https://github.com/openxla/xla/commit/9f150f6)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.8.1** (XLA [a7e58876](https://github.com/openxla/xla/commit/a7e58876)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -63,6 +63,12 @@ All content below is extracted from https://github.com/openxla/xla and licensed 
 - type: **bool**
 
 Enable unsafe fast-math optimizations in the CPU compiler; this may produce faster code at the expense of some accuracy.
+
+## --xla_cpu_enable_platform_dependent_math
+- default: `true`
+- type: **bool**
+
+Enable platform dependent math in the CPU compiler; this may produce faster code at the expense of consistent results across CPUs.
 
 ## --xla_cpu_fast_math_honor_nans
 - default: `true`
@@ -274,13 +280,25 @@ Use XNNPACK for supported operations.
 - default: `""`
 - type: **string**
 
-Comma-separated list of XNN fusion types to be enabled.; no whitespace around commas. Two ways to pass values:
+Comma-separated list of XNN fusion types to be enabled; no whitespace around commas. Two ways to pass values:
 
   1. Exact type names. This overwrites the default setting.
 
   2. '+' or '-' prefix: This adds or removes a fusion type from the default list. Cannot be mixed with the overwrite mode. Every item must have the sign prefix.
 
 Available fusion types: dot, eltwise, and reduce.
+
+The default list is currently empty.
+
+## --xla_cpu_experimental_ynn_fusion_type
+- default: `""`
+- type: **string**
+
+Comma-separated list of YNN fusion types to be enabled; no whitespace around commas. Two ways to pass values:
+
+  1. Exact type names. This overwrites the default setting.
+
+  2. '+' or '-' prefix: This adds or removes a fusion type from the default list. Cannot be mixed with the overwrite mode. Every item must have the sign prefix.
 
 The default list is currently empty.
 
@@ -438,6 +456,12 @@ Dumps HLO modules as HloProtos to the directory specified by --xla_dump_to.
 - type: **bool**
 
 Dumps FDO profiles as text to the directory specified by --xla_dump_to.
+
+## --xla_gpu_experimental_dump_gpu_executable
+- default: `false`
+- type: **bool**
+
+Dump the serialized GPU executables to 'gpu_executable_proto' suffixed files, in the directory specified by `xla_dump_to`. No-op if `xla_dump_to` isn't set, or during autotuning compilations.
 
 ## --xla_dump_hlo_as_dot
 - default: `false`
@@ -951,6 +975,12 @@ Collective permute decomposer threshold.
 
 Experimental optimizations for SPMD-based pipeline parallelism on GPU.
 
+## --xla_enable_enzyme_comms_opt
+- default: `false`
+- type: **bool**
+
+Enable communication optimization patterns specified in Enzyme. More details in http://shortn/_jXJ2VFoyMN.
+
 ## --xla_partitioning_algorithm
 - default: `"PARTITIONING_ALGORITHM_NOOP"`
 - type: **string**
@@ -965,7 +995,7 @@ The partitioning algorithm to be used in the PartitionAssignment pass
 Whether to use Triton-based matrix multiplication.
 
 ## --xla_gpu_unsupported_generic_triton_emitter_features
-- default: `"GENERIC_TRITON_EMITTER_ENABLE_NESTED_GEMM"`
+- default: `"GENERIC_TRITON_EMITTER_ENABLE_NESTED_GEMM,GENERIC_TRITON_EMITTER_ALLOW_ALL_GEMM_SHAPES,GENERIC_TRITON_EMITTER_ALLOW_ALL_OPS_IN_GEMM_FUSION,GENERIC_TRITON_EMITTER_DISABLE_LEGACY_GEMM"`
 - type: **string**
 
 Comma-separated list of individual features of generic Triton emitter. Use +/- prefix to modify the default list, or list features to enable explicitly - that will override the defaults.
@@ -1220,7 +1250,7 @@ Whether to run windowed einsum using multiple compute streams.
 Threshold until which elemental dot emitter is preferred for GEMMs (minimum combined number of elements of both matrices in non-batch dimensions to be considered for a rewrite).
 
 ## --xla_gpu_use_embeded_device_lib
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Whether to use embeded bitcode library in codegen.
@@ -1232,7 +1262,7 @@ Whether to use embeded bitcode library in codegen.
 Whether to use memcpy for local p2p communication.
 
 ## --xla_gpu_use_inprocess_lld
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Whether to use lld as a library for the linking.
@@ -1538,8 +1568,14 @@ Enables an experimental feature for command buffer conversion on thunks.
 
 If true, use the AutotunerPass to autotune fusions, instead of the gemm_fusion_autotuner.
 
+## --xla_gpu_experimental_allow_unroll_factor_eight
+- default: `true`
+- type: **bool**
+
+If true, allows unroll factor 8 on Blackwell architectures.
+
 ## --xla_detect_unstable_reductions
-- default: `"UNSTABLE_REDUCTION_DETECTION_MODE_NONE"`
+- default: `"DETECTION_MODE_NONE"`
 - type: **string**
 
 Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.
@@ -1573,3 +1609,39 @@ Set timeout for Collective Call Rendezvous termination
 - type: **bool**
 
 If true, keep shardings after SPMD.
+
+## --xla_gpu_experimental_enable_checksum_tracing_on_thunks
+- default: `false`
+- type: **bool**
+
+Enables an experimental feature to record checksums of selected thunk inputs/outputs.
+
+## --xla_gpu_experimental_thunk_buffer_debug_filter_by_thunk_id_ranges
+- default: `"(none)"`
+- type: **string**
+
+Limits the thunk buffer debug instrumentation to thunks with IDs matching one or more ranges defined as a single integer, min:max (inclusive), or half-open min:/:max.
+
+## --xla_gpu_experimental_thunk_buffer_debug_filter_by_profile_annotation_re
+- default: `"(none)"`
+- type: **string**
+
+Limits the thunk buffer debug instrumentation to thunks with profile annotations matching one or more regexes passed as comma-separated string.
+
+## --xla_gpu_experimental_enable_fusion_autotuner
+- default: `true`
+- type: **bool**
+
+Enable autotuning between the native & triton fusion emitters.
+
+## --xla_gpu_detect_nan
+- default: `"DETECTION_MODE_NONE"`
+- type: **string**
+
+Controls the behavior of the NaN detector pass that checks for presence of NaN values in kernel outputs. Acceptable values are: 'none', 'warning', and 'fail'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or fail the execution if NaNs are detected.
+
+## --xla_gpu_detect_inf
+- default: `"DETECTION_MODE_NONE"`
+- type: **string**
+
+Controls the behavior of the Inf detector pass that checks for presence of Inf values in kernel outputs. Acceptable values are: 'none', 'warning', and 'fail'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or fail the execution if Infs are detected.

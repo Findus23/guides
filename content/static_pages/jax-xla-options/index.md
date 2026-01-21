@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.8.1** (XLA [a7e58876](https://github.com/openxla/xla/commit/a7e58876)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.0** (XLA [bb760b0](https://github.com/openxla/xla/commit/bb760b047bdbfeff962f0366ad5cc782c98657e0)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -355,10 +355,10 @@ Sets how often we verify the emitted modules. Higher levels mean more frequent v
 Crashes the program on extra verification failures, e.g. cuDNN cross checking failures
 
 ## --xla_gpu_strict_conv_algorithm_picker
-- default: `true`
+- default: `false`
 - type: **bool**
 
-Upgrades warnings to failures when all algorithms fail conv autotuning.
+[Deprecated, do not use].
 
 ## --xla_gpu_autotune_level
 - default: `4`
@@ -420,12 +420,6 @@ Directory into which debugging data is written. If not specified but another dum
 - type: **bool**
 
 Whether to reset XLA_FLAGS next time to parse.
-
-## --xla_gpu_unsupported_annotate_with_emitter_loc
-- default: `false`
-- type: **bool**
-
-Forces emitters that use MLIR to annotate all the created MLIR instructions with the emitter's C++ source file and line number. The annotations should appear in the MLIR dumps. The emitters should use EmitterLocOpBuilder for that.
 
 ## --xla_dump_hlo_as_text
 - default: `false`
@@ -504,6 +498,12 @@ Limits dumping only to modules which match this regular expression. Default is t
 - type: **string**
 
 If specified, dumps HLO before and after optimization passes which match this regular expression, in addition to dumping at the very beginning and end of compilation.
+
+## --xla_dump_emitter_re
+- default: `""`
+- type: **string**
+
+If specified, dumps debug logs (e.g. IR like LLVM or MLIR) before and after emitters which match this regular expression, in addition to dumping at the very beginning and end of compilation.
 
 ## --xla_dump_include_timestamp
 - default: `false`
@@ -612,6 +612,12 @@ Overrides normal multi-threaded compilation setting to use this many threads. Se
 - type: **bool**
 
 Decides whether we can do LLVM module compilation in a parallelised way. If set to false, then it will be single threaded, otherwise the number of threads depends on the --xla_gpu_force_compilation_parallelism flag and the thread pool supplied to GpuCompiler.
+
+## --xla_gpu_default_to_alg_dot_bf16_bf16_f32
+- default: `false`
+- type: **bool**
+
+Use the dot precision algorithm `ALG_DOT_BF16_BF16_F32 by default for f32 dots.
 
 ## --xla_gpu_deterministic_ops
 - default: `false`
@@ -754,7 +760,7 @@ Use cuBLASLt for GEMMs when possible.
 Use persistent per-process XLA:GPU collectives cliques
 
 ## --xla_gpu_enable_command_buffer
-- default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN"`
+- default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN, DYNAMIC_SLICE_FUSION"`
 - type: **string**
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
@@ -837,6 +843,12 @@ Enables NCCL User Buffer Registration. collective_memory_size in the allocator c
 - type: **bool**
 
 Enables NCCL symmetric buffer registration.
+
+## --xla_gpu_experimental_aot_compiled_thunks
+- default: `false`
+- type: **bool**
+
+Enables an Ahead-of-Time (AOT) compilation flow where the compiled binary includes the generated Thunks. In contrast, the legacy flow only compiles up to the HLO optimization stage, before Thunk generation.
 
 ## --xla_gpu_experimental_enable_nvshmem
 - default: `false`
@@ -956,6 +968,12 @@ Enable pipelinling of all-gather instructions.
 
 Enable pipelinling of reduce-scatter instructions.
 
+## --xla_gpu_enable_pipelined_host_offloading
+- default: `false`
+- type: **bool**
+
+Enable pipelining of host offloading instructions.
+
 ## --xla_gpu_enable_pipelined_p2p
 - default: `false`
 - type: **bool**
@@ -993,12 +1011,6 @@ The partitioning algorithm to be used in the PartitionAssignment pass
 - **[Stable]**
 
 Whether to use Triton-based matrix multiplication.
-
-## --xla_gpu_unsupported_generic_triton_emitter_features
-- default: `"GENERIC_TRITON_EMITTER_ENABLE_NESTED_GEMM,GENERIC_TRITON_EMITTER_ALLOW_ALL_GEMM_SHAPES,GENERIC_TRITON_EMITTER_ALLOW_ALL_OPS_IN_GEMM_FUSION,GENERIC_TRITON_EMITTER_DISABLE_LEGACY_GEMM"`
-- type: **string**
-
-Comma-separated list of individual features of generic Triton emitter. Use +/- prefix to modify the default list, or list features to enable explicitly - that will override the defaults.
 
 ## --xla_gpu_unsupported_enable_triton_multi_output_fusion
 - default: `true`
@@ -1151,7 +1163,7 @@ Enable double buffering for while loop
 - default: `true`
 - type: **bool**
 
-Filter out kernels that spill registers during autotuning
+Filter out kernels that spill registers during autotuning. Default is true.
 
 ## --xla_gpu_fail_ptx_compilation_on_register_spilling
 - default: `false`
@@ -1327,6 +1339,24 @@ Experimental: Specify the behavior of per kernel autotuning cache. Supported mod
 
 Experimental: Specify the directory to read/write autotuner cache to.
 
+## --xla_gpu_experimental_autotune_backends
+- default: `"AUTOTUNE_BACKEND_TRITON, AUTOTUNE_BACKEND_CUBLAS, AUTOTUNE_BACKEND_CUBLASLT, AUTOTUNE_BACKEND_CUDNN, AUTOTUNE_BACKEND_ROCBLAS, AUTOTUNE_BACKEND_HIPBLASLT, AUTOTUNE_BACKEND_MIOPEN"`
+- type: **string**
+
+Backends to enable for autotuning. Comma-separated (no spaces). Examples:
+
+  'cudnn,triton' (overwrites defaults)
+
+  '+cudnn,-cublas' (adds/removes from defaults)
+
+Available: cudnn, triton, cublas, cublaslt.
+
+## --xla_gpu_gemm_autotuner_override_file
+- default: `""`
+- type: **string**
+
+A textproto file to override autotune results. See also `xla_gpu_override_gemm_autotuner` to override with a single config.
+
 ## --xla_enable_command_buffers_during_profiling
 - default: `false`
 - type: **bool**
@@ -1362,6 +1392,12 @@ Option to emit a target-specific marker to indicate the start of a training. The
 - type: **string**
 
 If an FDO profile is specified and latency hiding scheduler encounters missing instructions in the profile, then the compilation will halt (ERROR), or a warning will be emitted (WARN), or the checker is disabled (OFF)
+
+## --xla_gpu_executable_embed_debug_info
+- default: `true`
+- type: **bool**
+
+Add debug information to the executable such as HLO module, asm_text etc.
 
 ## --xla_gpu_executable_warn_stuck_timeout
 - default: `10`
@@ -1454,6 +1490,12 @@ Internal: Enable the RaggedAllToAllDecomposer, an experimental pass that rewrite
 
 Internal: Enable the RaggedAllToAllMultiHostDecomposer, an experimental pass to decompose ragged-all-to-all operation in intra-host and inter-host parts.
 
+## --xla_gpu_unsupported_disable_nested_gemm_fusions
+- default: `false`
+- type: **bool**
+
+Enable the new pipeline that does not use nesting at HLO level
+
 ## --xla_gpu_unsupported_override_fast_interconnect_slice_size
 - default: `0`
 - type: **int64**
@@ -1497,7 +1539,7 @@ Crash if HloPassFix can not converge after a fixed number of iterations.
 Perform hash-based cycle detection in fixed-point loops.
 
 ## --xla_gpu_experimental_enable_heuristic_collective_combining
-- default: `true`
+- default: `false`
 - type: **bool**
 
 Enable heuristic based collective combining.
@@ -1532,6 +1574,18 @@ Crash if a pass reports that it did not change the HLO but in fact it did.
 
 Return an error if HostOffloader would have automatically offloaded some compute to the host.
 
+## --xla_allow_h2h_copy_when_automatic_host_compute_offload_disabled
+- default: `false`
+- type: **bool**
+
+Allow host-to-host copy when automatic host compute offload is disabled, i.e. when xla_disable_automatic_host_compute_offload is set.
+
+## --xla_enable_scoped_logging_timers
+- default: `true`
+- type: **bool**
+
+Do not run scoped logging timers (only supported in some places).
+
 ## --xla_gpu_experimental_matmul_perf_table_path
 - default: `""`
 - type: **string**
@@ -1544,23 +1598,11 @@ If non empty will interpret this variable as a path for performance tables for m
 
 Enable the pass that splits GEMMs that underutilize the GPU load by splitting the K dimension using a heuristic.
 
-## --xla_gpu_experimental_enable_triton_tma
-- default: `false`
-- type: **bool**
-
-Enable Triton's TMA loads/stores for arguments where applicable.
-
 ## --xla_gpu_experimental_enable_triton_warp_specialization
 - default: `false`
 - type: **bool**
 
 Enable Triton's auto warp specialization feature where applicable.
-
-## --xla_gpu_experimental_enable_command_buffer_on_thunks
-- default: `true`
-- type: **bool**
-
-Enables an experimental feature for command buffer conversion on thunks.
 
 ## --xla_gpu_experimental_use_autotuner_pass
 - default: `false`
@@ -1579,6 +1621,12 @@ If true, allows unroll factor 8 on Blackwell architectures.
 - type: **string**
 
 Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.
+
+## --xla_detect_unstable_reductions_post_optimizations
+- default: `"DETECTION_MODE_NONE"`
+- type: **string**
+
+Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations after optimizations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.
 
 ## --xla_gpu_experimental_use_raft_select_k
 - default: `false`
@@ -1604,6 +1652,12 @@ Set timeout for Collective Call Rendezvous stuck warning
 
 Set timeout for Collective Call Rendezvous termination
 
+## --xla_cpu_collective_timeout_seconds
+- default: `1800`
+- type: **int32**
+
+Set timeout for CPU collectives
+
 ## --xla_keep_shardings_after_spmd
 - default: `false`
 - type: **bool**
@@ -1615,6 +1669,12 @@ If true, keep shardings after SPMD.
 - type: **bool**
 
 Enables an experimental feature to record checksums of selected thunk inputs/outputs.
+
+## --xla_gpu_experimental_enable_buffer_saver_on_thunks
+- default: `false`
+- type: **bool**
+
+When provided, enables an experimental feature to save results of selected thunks.
 
 ## --xla_gpu_experimental_thunk_buffer_debug_filter_by_thunk_id_ranges
 - default: `"(none)"`

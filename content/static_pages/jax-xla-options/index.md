@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.0** (XLA [bb760b0](https://github.com/openxla/xla/commit/bb760b047bdbfeff962f0366ad5cc782c98657e0)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.1** (XLA [3cc8846c](https://github.com/openxla/xla/commit/3cc8846c10052cc1c32c4db87866eac4e4cdbccd)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -325,10 +325,16 @@ Split LLVM module into at most this many parts before codegen to enable parallel
 Use region based analysis in copy insertion pass.
 
 ## --xla_cpu_enable_concurrency_optimized_scheduler
-- default: `true`
+- default: `false`
 - type: **bool**
 
-Use HLO module scheduler that is optimized for extracting concurrency from an HLO module by trading off extra memory pressure.
+[Deprecated, do not use].
+
+## --xla_cpu_scheduler_type
+- default: `"CPU_SCHEDULER_TYPE_DEFAULT"`
+- type: **string**
+
+XLA:CPU's scheduler type.
 
 ## --xla_cpu_prefer_vector_width
 - default: `256`
@@ -753,12 +759,6 @@ Rewrite layer norm patterns into cuDNN library call.
 
 Use cuBLASLt for GEMMs when possible.
 
-## --xla_gpu_collectives_use_persistent_cliques
-- default: `false`
-- type: **bool**
-
-Use persistent per-process XLA:GPU collectives cliques
-
 ## --xla_gpu_enable_command_buffer
 - default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN, DYNAMIC_SLICE_FUSION"`
 - type: **string**
@@ -1091,6 +1091,12 @@ Enabled when xla_gpu_auto_spmd_partitioning_memory_budget_gb is 0. The memory bu
 
 Dumps autotuned GEMM fusions to the directory specified by xla_dump_to or stdout. Each fusion is dumped only once, as an optimized HLO.
 
+## --xla_gpu_dump_autotuned_instructions
+- default: `false`
+- type: **bool**
+
+Dumps autotuned instructions to the directory specified by xla_dump_to or stdout. Each instruction is dumped only once, as an optimized HLO.
+
 ## --xla_gpu_override_gemm_autotuner
 - default: `""`
 - type: **string**
@@ -1340,7 +1346,7 @@ Experimental: Specify the behavior of per kernel autotuning cache. Supported mod
 Experimental: Specify the directory to read/write autotuner cache to.
 
 ## --xla_gpu_experimental_autotune_backends
-- default: `"AUTOTUNE_BACKEND_TRITON, AUTOTUNE_BACKEND_CUBLAS, AUTOTUNE_BACKEND_CUBLASLT, AUTOTUNE_BACKEND_CUDNN, AUTOTUNE_BACKEND_ROCBLAS, AUTOTUNE_BACKEND_HIPBLASLT, AUTOTUNE_BACKEND_MIOPEN"`
+- default: `""`
 - type: **string**
 
 Backends to enable for autotuning. Comma-separated (no spaces). Examples:
@@ -1349,7 +1355,13 @@ Backends to enable for autotuning. Comma-separated (no spaces). Examples:
 
   '+cudnn,-cublas' (adds/removes from defaults)
 
-Available: cudnn, triton, cublas, cublaslt.
+Available: cudnn, triton, cublas, cublaslt etc, check xla.autotuner.Backend for the full list.
+
+## --xla_gpu_experimental_all_fusions_with_triton
+- default: `false`
+- type: **bool**
+
+Experimental: If true, autotune all fusions with block level emitter.
 
 ## --xla_gpu_gemm_autotuner_override_file
 - default: `""`
@@ -1411,6 +1423,12 @@ Set timeout for Rendezvous stuck warning
 
 Set timeout for Rendezvous termination
 
+## --xla_gpu_execution_terminate_timeout
+- default: `"inf"`
+- type: **string**
+
+Set timeout for XLA:GPU execution to prevent undetected deadlocks
+
 ## --xla_gpu_first_collective_call_warn_stuck_timeout_seconds
 - default: `20`
 - type: **int32**
@@ -1436,7 +1454,7 @@ Disable XLA GPU passes that depend on non-open source binary libraries
 Ignore channel ids for collective operations.
 
 ## --xla_gpu_dot_merger_threshold_mb
-- default: `32`
+- default: `64`
 - type: **int32**
 - **[Stable]**
 
@@ -1470,7 +1488,7 @@ Experimental: Make unset entry computation layout mean auto layout instead of de
 - default: `false`
 - type: **bool**
 
-Enable the scatter determinism expander, an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance.Note that even when this flag is disabled, scatter operations may still be deterministic, although with additional overhead.
+Makes scatter ops deterministic and enables the use of the scatter determinism expander. This is an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance. If the optimization pass does not support a particular scater op, it will be made deterministic using a slower implementation. Note that even when this flag is disabled, scatter operations may still be deterministic, with the slower implemntation. This is the case when 'xla_gpu_exclude_nondeterministic_ops' is enabled.
 
 ## --xla_gpu_unsupported_enable_all_reduce_decomposer
 - default: `false`
@@ -1634,6 +1652,12 @@ Controls the behavior of the unstable reduction detector pass that checks for un
 
 If true, use the raft::matrix::select_k implementation of TopK.
 
+## --xla_gpu_experimental_ragged_all_to_all_use_barrier
+- default: `false`
+- type: **bool**
+
+If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
+
 ## --xla_gpu_experimental_scaled_dot_with_triton
 - default: `false`
 - type: **bool**
@@ -1663,6 +1687,12 @@ Set timeout for CPU collectives
 - type: **bool**
 
 If true, keep shardings after SPMD.
+
+## --xla_enable_hlo_sharding_v3
+- default: `false`
+- type: **bool**
+
+If true, use HloShardingV3 which is a mesh and axis based sharding representation.
 
 ## --xla_gpu_experimental_enable_checksum_tracing_on_thunks
 - default: `false`
@@ -1694,6 +1724,12 @@ Limits the thunk buffer debug instrumentation to thunks with profile annotations
 
 Enable autotuning between the native & triton fusion emitters.
 
+## --xla_gpu_rocm_max_trace_events
+- default: `4194304`
+- type: **int64**
+
+Maximum number of ROCm trace events (applies to callback/activity/annotation). Set as high as memory allows; up to 1e9.
+
 ## --xla_gpu_detect_nan
 - default: `"DETECTION_MODE_NONE"`
 - type: **string**
@@ -1705,3 +1741,21 @@ Controls the behavior of the NaN detector pass that checks for presence of NaN v
 - type: **string**
 
 Controls the behavior of the Inf detector pass that checks for presence of Inf values in kernel outputs. Acceptable values are: 'none', 'warning', and 'fail'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or fail the execution if Infs are detected.
+
+## --xla_gpu_log_minmax
+- default: `false`
+- type: **bool**
+
+If true, log min/max values from kernel outputs.
+
+## --xla_early_exit_with_layouts
+- default: `false`
+- type: **bool**
+
+If true, exit early from the layout assignment pass after assigning layouts to entry computations.
+
+## --xla_gpu_print_compilation_stats
+- default: `false`
+- type: **bool**
+
+Prints statistics about the HLO passes: how many times each pass was run, and how long it took.

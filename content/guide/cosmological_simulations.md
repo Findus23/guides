@@ -45,7 +45,7 @@ CITATION.bib     FindFFTW3.cmake          example.conf  testing
 CMakeLists.txt   LICENSE                  external      version.cmake  
 CONTRIBUTING.md  README.md                include  
 Doxyfile.in      bitbucket-pipelines.yml  src
-~/monofonIC ➜ sudo apt install build-essentials # install all basic requirements to compile C/C++ code
+~/monofonIC ➜ sudo apt install build-essential # install all basic requirements to compile C/C++ code
 ~/monofonIC ➜ sudo apt install cmake # monofonIC uses cmake for compilation
 ~/monofonIC ➜ sudo apt install libhdf5-dev libhdf5-mpi-dev # for writing HDF5 files
 ~/monofonIC ➜ sudo apt install libopenmpi-dev # for MPI

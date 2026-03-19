@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.1** (XLA [3cc8846c](https://github.com/openxla/xla/commit/3cc8846c10052cc1c32c4db87866eac4e4cdbccd)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.2** (XLA [187a5eb5](https://github.com/openxla/xla/commit/187a5eb58277a85847d1516bd1e20b7faf03d5ef)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 <!--more-->
@@ -596,7 +596,7 @@ Trigger error on execution on TPU if a INF value is detected
 If true, XLA CPU generates code to call TraceMe::Activity{Start|End} around HLO operations.
 
 ## --xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, XLA GPU falls back to the driver if ptxas is not found. Note that falling back to the driver can have drawbacks like using more memory and/or other bugs during compilation, so we recommend setting this flag to false.
@@ -754,7 +754,7 @@ Use cudnn random number generator for fused attention kernel.
 Rewrite layer norm patterns into cuDNN library call.
 
 ## --xla_gpu_enable_cublaslt
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Use cuBLASLt for GEMMs when possible.
@@ -1429,6 +1429,12 @@ Set timeout for Rendezvous termination
 
 Set timeout for XLA:GPU execution to prevent undetected deadlocks
 
+## --xla_gpu_execution_progress_tracking
+- default: `0`
+- type: **int32**
+
+Number of thunks to report in progress tracking on execution timeout (0 to disable)
+
 ## --xla_gpu_first_collective_call_warn_stuck_timeout_seconds
 - default: `20`
 - type: **int32**
@@ -1507,12 +1513,6 @@ Internal: Enable the RaggedAllToAllDecomposer, an experimental pass that rewrite
 - type: **bool**
 
 Internal: Enable the RaggedAllToAllMultiHostDecomposer, an experimental pass to decompose ragged-all-to-all operation in intra-host and inter-host parts.
-
-## --xla_gpu_unsupported_disable_nested_gemm_fusions
-- default: `false`
-- type: **bool**
-
-Enable the new pipeline that does not use nesting at HLO level
 
 ## --xla_gpu_unsupported_override_fast_interconnect_slice_size
 - default: `0`
@@ -1622,17 +1622,11 @@ Enable the pass that splits GEMMs that underutilize the GPU load by splitting th
 
 Enable Triton's auto warp specialization feature where applicable.
 
-## --xla_gpu_experimental_use_autotuner_pass
-- default: `false`
-- type: **bool**
+## --xla_gpu_experimental_max_unroll_factor
+- default: `32`
+- type: **int32**
 
-If true, use the AutotunerPass to autotune fusions, instead of the gemm_fusion_autotuner.
-
-## --xla_gpu_experimental_allow_unroll_factor_eight
-- default: `true`
-- type: **bool**
-
-If true, allows unroll factor 8 on Blackwell architectures.
+Controls max unroll factor on Blackwell architectures. Should be at least 1.
 
 ## --xla_detect_unstable_reductions
 - default: `"DETECTION_MODE_NONE"`
@@ -1657,6 +1651,12 @@ If true, use the raft::matrix::select_k implementation of TopK.
 - type: **bool**
 
 If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
+
+## --xla_gpu_experimental_use_ragged_dot_grouped_gemm
+- default: `true`
+- type: **bool**
+
+If true, use grouped GEMM (hipBLASLt) for ragged dot operations.
 
 ## --xla_gpu_experimental_scaled_dot_with_triton
 - default: `false`
@@ -1730,6 +1730,12 @@ Enable autotuning between the native & triton fusion emitters.
 
 Maximum number of ROCm trace events (applies to callback/activity/annotation). Set as high as memory allows; up to 1e9.
 
+## --xla_gpu_experimental_enable_tiling_propagation
+- default: `false`
+- type: **bool**
+
+If true, enable experimental tiling propagation.
+
 ## --xla_gpu_detect_nan
 - default: `"DETECTION_MODE_NONE"`
 - type: **string**
@@ -1759,3 +1765,9 @@ If true, exit early from the layout assignment pass after assigning layouts to e
 - type: **bool**
 
 Prints statistics about the HLO passes: how many times each pass was run, and how long it took.
+
+## --xla_gpu_enable_pdl
+- default: `false`
+- type: **bool**
+
+Enable PDL (Programmatic Dependent Launch).

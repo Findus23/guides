@@ -7,8 +7,10 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.9.2** (XLA [187a5eb5](https://github.com/openxla/xla/commit/187a5eb58277a85847d1516bd1e20b7faf03d5ef)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.10.0** (XLA [187a5eb5](https://github.com/openxla/xla/commit/187a5eb58277a85847d1516bd1e20b7faf03d5ef)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
+
+If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
 
 <!--more-->
 
@@ -257,6 +259,12 @@ The default list is currently empty.
 - type: **bool**
 
 Generate calls to ACL (Arm Compute Library) in the CPU backend.
+
+## --xla_cpu_opt_preset
+- default: `"CPU_OPT_PRESET_DEFAULT"`
+- type: **string**
+
+Set CPU optimization preset (FAST_RUNTIME, FAST_COMPILE)
 
 ## --xla_cpu_use_fusion_emitters
 - default: `true`
@@ -675,6 +683,12 @@ Size threshold (in bytes) for the GPU reduce-scatter combiner.
 
 Size threshold (in bytes) for the GPU collective-permute combiner.
 
+## --xla_gpu_collective_combine_threshold_count
+- default: `2048`
+- type: **int64**
+
+Maximum number of instructions to be combined in collective combiners.
+
 ## --xla_gpu_enable_all_gather_combine_by_dim
 - default: `false`
 - type: **bool**
@@ -987,6 +1001,12 @@ Enable pipelinling of P2P instructions.
 
 Collective permute decomposer threshold.
 
+## --xla_gpu_collectives_implementation
+- default: `""`
+- type: **string**
+
+Name of the GPU collectives implementation to use (e.g. "nccl", "loopback"). When empty (the default), the highest-priority registered implementation is used.
+
 ## --xla_gpu_experimental_pipeline_parallelism_opt_level
 - default: `"PIPELINE_PARALLELISM_OPT_LEVEL_DISABLE"`
 - type: **string**
@@ -998,6 +1018,12 @@ Experimental optimizations for SPMD-based pipeline parallelism on GPU.
 - type: **bool**
 
 Enable communication optimization patterns specified in Enzyme. More details in http://shortn/_jXJ2VFoyMN.
+
+## --xla_recognize_reduction_optimization_level
+- default: `0`
+- type: **int32**
+
+Optimization level for reduction recognition pass.
 
 ## --xla_partitioning_algorithm
 - default: `"PARTITIONING_ALGORITHM_NOOP"`
@@ -1122,16 +1148,10 @@ If true, use the new fine-grain region-based live range interference analysis in
 If true, each fusion instruction will have a cost model runtime estimate in backend config after compilation.
 
 ## --xla_gpu_enable_split_k_autotuning
-- default: `true`
+- default: `false`
 - type: **bool**
 
 Enable split_k autotuning for triton gemms.
-
-## --xla_gpu_enable_reduction_epilogue_fusion
-- default: `true`
-- type: **bool**
-
-Enable fusion for reduction epilogues
 
 ## --xla_gpu_enable_nccl_clique_optimization
 - default: `false`
@@ -1278,6 +1298,12 @@ Whether to use embeded bitcode library in codegen.
 - type: **bool**
 
 Whether to use memcpy for local p2p communication.
+
+## --xla_gpu_collective_permute_connected_components
+- default: `false`
+- type: **bool**
+
+Split collective-permute into connected-component replica groups instead of one giant clique.
 
 ## --xla_gpu_use_inprocess_lld
 - default: `true`
@@ -1453,11 +1479,11 @@ Set timeout for First Collective Call Rendezvous termination
 
 Disable XLA GPU passes that depend on non-open source binary libraries
 
-## --xla_ignore_channel_id
+## --xla_gpu_experimental_enable_conv_fusion
 - default: `false`
 - type: **bool**
 
-Ignore channel ids for collective operations.
+enable experimental XLA GPU passes that rewrite conv as hlo fusion instead of custom call.
 
 ## --xla_gpu_dot_merger_threshold_mb
 - default: `64`
@@ -1483,6 +1509,12 @@ Enable the experimental explicit stream annotation support. If false, the annota
 - type: **int32**
 
 This controls how many in-flight collectives latency hiding scheduler can schedule.
+
+## --xla_gpu_experimental_parallel_async_compute_limit
+- default: `2`
+- type: **int32**
+
+This controls how many in-flight asynchronous computations latency hiding scheduler can schedule.
 
 ## --xla_pjrt_allow_auto_layout_in_hlo
 - default: `false`
@@ -1610,17 +1642,23 @@ Do not run scoped logging timers (only supported in some places).
 
 If non empty will interpret this variable as a path for performance tables for matmuls. Expects `xla.gpu.DeviceHloInstructionProfiles` proto.
 
-## --xla_gpu_experimental_enable_split_k_rewrite
-- default: `false`
-- type: **bool**
+## --xla_gpu_experimental_force_split_k
+- default: `0`
+- type: **int32**
 
-Enable the pass that splits GEMMs that underutilize the GPU load by splitting the K dimension using a heuristic.
+Force a specific split_k value. Must be a power of two. Zero (default) means do not force split_k and use the heuristic.
 
 ## --xla_gpu_experimental_enable_triton_warp_specialization
 - default: `false`
 - type: **bool**
 
 Enable Triton's auto warp specialization feature where applicable.
+
+## --xla_gpu_experimental_enable_collective_multi_streaming
+- default: `false`
+- type: **bool**
+
+Enable multi-stream runtime for collectives.
 
 ## --xla_gpu_experimental_max_unroll_factor
 - default: `32`
@@ -1647,10 +1685,16 @@ Controls the behavior of the unstable reduction detector pass that checks for un
 If true, use the raft::matrix::select_k implementation of TopK.
 
 ## --xla_gpu_experimental_ragged_all_to_all_use_barrier
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
+
+## --xla_gpu_experimental_ragged_all_to_all_use_barrier_with_nccl
+- default: `false`
+- type: **bool**
+
+If true, use the MultiGpuBarrierWithNcclKernel in one-shot RaggedAllToAll thunk.
 
 ## --xla_gpu_experimental_use_ragged_dot_grouped_gemm
 - default: `true`
@@ -1659,7 +1703,7 @@ If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
 If true, use grouped GEMM (hipBLASLt) for ragged dot operations.
 
 ## --xla_gpu_experimental_scaled_dot_with_triton
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, use the Triton emitter for scaled dot.
@@ -1767,7 +1811,19 @@ If true, exit early from the layout assignment pass after assigning layouts to e
 Prints statistics about the HLO passes: how many times each pass was run, and how long it took.
 
 ## --xla_gpu_enable_pdl
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable PDL (Programmatic Dependent Launch).
+
+## --xla_dump_buffer_assignment_analysis
+- default: `true`
+- type: **bool**
+
+Dump BufferAssignment analysis.
+
+## --xla_gpu_command_buffer_update_mode
+- default: `"ALWAYS_UPDATE"`
+- type: **string**
+
+Controls the VA remapping update strategy for command buffer thunks. See CommandBufferUpdateMode for details.

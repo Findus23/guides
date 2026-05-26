@@ -387,6 +387,12 @@ Set GEMM and Convolution auto-tuning level. 0 = off; 1 = on; 2 = on+init; 3 = on
 
 Maximal number of GEMM solutions to consider for autotuning: 0 means consider all solutions returned by the GEMM library.
 
+## --xla_gpu_fusion_autotune_top_k_configs
+- default: `1`
+- type: **int32**
+
+Maximum number of candidate configs considered during autotuning non-gemm fusions.
+
 ## --xla_gpu_autotune_gemm_rtol
 - default: `0.100000`
 - type: **float**
@@ -524,6 +530,12 @@ If specified, dumps debug logs (e.g. IR like LLVM or MLIR) before and after emit
 - type: **bool**
 
 If specified, includes a timestamp in the dumped filenames.
+
+## --xla_dump_hlo_to_subfolder
+- default: `false`
+- type: **bool**
+
+If true, dumps HLO modules in a subfolder titled the HLO module name in the directory specified by --xla_dump_to.
 
 ## --xla_dump_max_hlo_modules
 - default: `-1`
@@ -859,7 +871,7 @@ Enables NCCL User Buffer Registration. collective_memory_size in the allocator c
 Enables NCCL symmetric buffer registration.
 
 ## --xla_gpu_experimental_aot_compiled_thunks
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enables an Ahead-of-Time (AOT) compilation flow where the compiled binary includes the generated Thunks. In contrast, the legacy flow only compiles up to the HLO optimization stage, before Thunk generation.
@@ -1039,7 +1051,7 @@ The partitioning algorithm to be used in the PartitionAssignment pass
 Whether to use Triton-based matrix multiplication.
 
 ## --xla_gpu_unsupported_enable_triton_multi_output_fusion
-- default: `true`
+- default: `false`
 - type: **bool**
 
 Enable Triton multi-output fusions.
@@ -1055,6 +1067,12 @@ Whether to verify that the numeric results of Triton fusions match the results o
 - type: **bool**
 
 Enable cuDNN frontend for int8x32 convolutions with reordered filter.
+
+## --xla_gpu_experimental_gemm_fusion_v2
+- default: `false`
+- type: **bool**
+
+Enable experimental rewrite of GEMM fusion pass for Triton.
 
 ## --xla_gpu_triton_gemm_any
 - default: `true`
@@ -1146,12 +1164,6 @@ If true, use the new fine-grain region-based live range interference analysis in
 - type: **bool**
 
 If true, each fusion instruction will have a cost model runtime estimate in backend config after compilation.
-
-## --xla_gpu_enable_split_k_autotuning
-- default: `false`
-- type: **bool**
-
-Enable split_k autotuning for triton gemms.
 
 ## --xla_gpu_enable_nccl_clique_optimization
 - default: `false`
@@ -1304,6 +1316,12 @@ Whether to use memcpy for local p2p communication.
 - type: **bool**
 
 Split collective-permute into connected-component replica groups instead of one giant clique.
+
+## --xla_gpu_collective_permute_mode
+- default: `"private"`
+- type: **string**
+
+Memory mode for collective-permute: private, symmetric, peer. See CollectivesMode for details.
 
 ## --xla_gpu_use_inprocess_lld
 - default: `true`
@@ -1553,7 +1571,7 @@ Internal: Enable the RaggedAllToAllMultiHostDecomposer, an experimental pass to 
 Internal: Override the number of devices in the fast interconnect domain. Default is 0, which means the number of devices is not overridden.
 
 ## --xla_gpu_unsupported_use_all_reduce_one_shot_kernel
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Internal: Enable the one-shot kernel for single-host all-reduce operations.
@@ -1646,7 +1664,7 @@ If non empty will interpret this variable as a path for performance tables for m
 - default: `0`
 - type: **int32**
 
-Force a specific split_k value. Must be a power of two. Zero (default) means do not force split_k and use the heuristic.
+Force a specific split_k value. Zero (default) means do not force split_k and use the heuristic.
 
 ## --xla_gpu_experimental_enable_triton_warp_specialization
 - default: `false`
@@ -1696,11 +1714,29 @@ If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
 
 If true, use the MultiGpuBarrierWithNcclKernel in one-shot RaggedAllToAll thunk.
 
+## --xla_gpu_experimental_ragged_all_to_all_zero_copy
+- default: `false`
+- type: **bool**
+
+If true, use the Symmetric Memory mode for MultiGpuBarrierWithNcclKernel
+
 ## --xla_gpu_experimental_use_ragged_dot_grouped_gemm
 - default: `true`
 - type: **bool**
 
 If true, use grouped GEMM (hipBLASLt) for ragged dot operations.
+
+## --xla_gpu_native_emitter_tune_unroll_factor_for_loops
+- default: `false`
+- type: **bool**
+
+Experimental: If set, autotune the unroll factor for loop fusions in native emitter.
+
+## --xla_gpu_experimental_use_ragged_dot_fusion
+- default: `false`
+- type: **bool**
+
+If true, use cuDNN fusion for ragged dot operations.
 
 ## --xla_gpu_experimental_scaled_dot_with_triton
 - default: `true`
@@ -1737,6 +1773,12 @@ If true, keep shardings after SPMD.
 - type: **bool**
 
 If true, use HloShardingV3 which is a mesh and axis based sharding representation.
+
+## --xla_enable_rgv3_materialization
+- default: `true`
+- type: **bool**
+
+If true, opportunistically materialize MeshAxesReplicaGroupList (RGV3) in SPMD partitioner. If false, fallback to legacy V1/V2 representations.
 
 ## --xla_gpu_experimental_enable_checksum_tracing_on_thunks
 - default: `false`
@@ -1827,3 +1869,15 @@ Dump BufferAssignment analysis.
 - type: **string**
 
 Controls the VA remapping update strategy for command buffer thunks. See CommandBufferUpdateMode for details.
+
+## --xla_gpu_experimental_move_gemm_conv_autotuner
+- default: `false`
+- type: **bool**
+
+If true, move GEMM and Conv autotuning and post cleanup after fusiion passes.
+
+## --xla_gpu_experimental_cost_model_gemm_tiling_options
+- default: `""`
+- type: **string**
+
+Experimental options for adjusting cost-model guided GEMM tiling selection; comma-separated list of 'key=val' strings (=val may be omitted); no whitespace around commas.

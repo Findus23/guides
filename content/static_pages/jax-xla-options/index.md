@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.10.0** (XLA [187a5eb5](https://github.com/openxla/xla/commit/187a5eb58277a85847d1516bd1e20b7faf03d5ef)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.10.2** (XLA [5a9e73cb](https://github.com/openxla/xla/commit/5a9e73cbd92530cac2ac36f4736a774b2412afe2)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -60,6 +60,12 @@ All content below is extracted from https://github.com/openxla/xla and licensed 
 
 -------------
 
+## --xla_hlo_evaluator_use_fast_path
+- default: `false`
+- type: **bool**
+
+Enable fast evaluation of dots in the HloEvaluator
+
 ## --xla_cpu_enable_fast_math
 - default: `false`
 - type: **bool**
@@ -71,6 +77,12 @@ Enable unsafe fast-math optimizations in the CPU compiler; this may produce fast
 - type: **bool**
 
 Enable platform dependent math in the CPU compiler; this may produce faster code at the expense of consistent results across CPUs.
+
+## --xla_cpu_experimental_enable_tiling_propagation
+- default: `false`
+- type: **bool**
+
+If true, enable experimental tiling propagation for CPU.
 
 ## --xla_cpu_fast_math_honor_nans
 - default: `true`
@@ -95,6 +107,12 @@ When xla_cpu_enable_fast_math is true then this controls whether we forbid to us
 - type: **bool**
 
 When xla_cpu_enable_fast_math is true then this controls whether we forbid to approximate calculations for functions. Ignored when xla_cpu_enable_fast_math is false.
+
+## --xla_cpu_ftz
+- default: `true`
+- type: **bool**
+
+If true, flush-to-zero semantics are enabled in the code generated for CPUs. Default is true.
 
 ## --xla_cpu_enable_fast_min_max
 - default: `true`
@@ -453,6 +471,12 @@ Dumps HLO modules as text before and after optimizations. debug_options are writ
 
 Dumps HLO modules as long text before and after optimizations. debug_options are written to the --xla_dump_to dir, or, if no dir is specified, to stdout. Ignored unless xla_dump_hlo_as_text is true.
 
+## --xla_hlo_print_inline_stack_frames
+- default: `false`
+- type: **bool**
+
+If true, when printing HLO text, resolve each instruction's stack_frame_id into inline source_file/source_line/source_column fields on its metadata, and append the StackFrameIndex resolution tables (FileNames, FunctionNames, FileLocations, StackFrames) at the end of the module text.
+
 ## --xla_dump_large_constants
 - default: `false`
 - type: **bool**
@@ -616,7 +640,7 @@ Trigger error on execution on TPU if a INF value is detected
 If true, XLA CPU generates code to call TraceMe::Activity{Start|End} around HLO operations.
 
 ## --xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found
-- default: `true`
+- default: `false`
 - type: **bool**
 
 If true, XLA GPU falls back to the driver if ptxas is not found. Note that falling back to the driver can have drawbacks like using more memory and/or other bugs during compilation, so we recommend setting this flag to false.
@@ -667,7 +691,7 @@ This disables a certain set of async collectives and turn them into synchronous 
 - default: `"WHILE_LOOP_UNROLLING_AUTO_UNROLL"`
 - type: **string**
 
-Enables while loop unrolling features. `WHILE_LOOP_UNROLLING_DOUBLE_BUFFER` unrolls the loop by factor of 2, `WHILE_LOOP_UNROLLING_FULL_UNROLL` will unroll the entire loop `WHILE_LOOP_UNROLLING_AUTO_UNROLL` unrolls by a factor of 2, if there is any collective present within a while loop.
+Enables while loop unrolling features. `WHILE_LOOP_UNROLLING_DOUBLE_BUFFER` unrolls the loop by factor of 2, `WHILE_LOOP_UNROLLING_FULL_UNROLL` will unroll the entire loop `WHILE_LOOP_UNROLLING_AUTO_UNROLL` unrolls by a factor of 2, if there is any collective present within a while loop.`WHILE_LOOP_UNROLLING_MANUAL_UNROLL` will unroll loops annotated with the `_xla_loop_unroll_strategy` attribute.
 
 ## --xla_gpu_all_reduce_combine_threshold_bytes
 - default: `31457287`
@@ -783,10 +807,10 @@ Rewrite layer norm patterns into cuDNN library call.
 - default: `true`
 - type: **bool**
 
-Use cuBLASLt for GEMMs when possible.
+[Deprecated] Use cuBLASLt for GEMMs when possible.
 
 ## --xla_gpu_enable_command_buffer
-- default: `"FUSION, CUBLAS, CUBLASLT, CUSTOM_CALL, CUDNN, DYNAMIC_SLICE_FUSION"`
+- default: `"CONDITIONAL, CUBLAS, CUBLASLT, CUDNN, CUSTOM_CALL, DYNAMIC_SLICE_FUSION, FUSION"`
 - type: **string**
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
@@ -844,19 +868,25 @@ Enable dumping the full HloModuleConfig proto.
 - type: **bool**
 - **[Stable]**
 
-Whether to enable address computation fusion to optimize dynamic-slice and dynamic-update-slice operations.
+Whether to enable dynamic slice fusion to optimize dynamic-slice and dynamic-update-slice operations.
+
+## --xla_gpu_enable_dus_accumulator_zero_init_elimination
+- default: `false`
+- type: **bool**
+
+Replaces broadcast(0) scan-accumulator init with AllocateBuffer when the body's DUS covers every slot.
+
+## --xla_gpu_experimental_dynamic_slice_fusion_verify_offsets
+- default: `false`
+- type: **bool**
+
+When true, DynamicSliceFusionV2Thunk verifies at runtime that annotated DynamicSliceConfig offsets match actual XLA-computed DS/DUS offsets. Adds D2H sync overhead — for debugging only.
 
 ## --xla_gpu_nccl_termination_timeout_seconds
 - default: `-1`
 - type: **int64**
 
 Timeout in seconds before terminating jobs stuck in NCCL Rendezvous.
-
-## --xla_gpu_enable_shared_constants
-- default: `true`
-- type: **bool**
-
-Enable constant sharing between GPU executables
 
 ## --xla_gpu_enable_nccl_user_buffers
 - default: `false`
@@ -1233,6 +1263,12 @@ Filename for GPU TargetConfig. Triggers devicless compilation: attached device i
 
 Enable radix sort using CUB for simple shapes
 
+## --xla_gpu_deviceless_cub_mode
+- default: `"DEVICELESS_CUB_WITH_FALLBACK"`
+- type: **string**
+
+Control CUB behavior during deviceless compilation. Available options: DEVICELESS_CUB_DISABLED, DEVICELESS_CUB_WITH_FALLBACK, DEVICELESS_CUB_NO_FALLBACK, DEVICELESS_CUB_FORCE_ON_NO_FALLBACK.
+
 ## --xla_gpu_threshold_for_windowed_einsum_mib
 - default: `100000`
 - type: **int64**
@@ -1322,6 +1358,12 @@ Split collective-permute into connected-component replica groups instead of one 
 - type: **string**
 
 Memory mode for collective-permute: private, symmetric, peer. See CollectivesMode for details.
+
+## --xla_gpu_all_gather_mode
+- default: `"private"`
+- type: **string**
+
+Memory mode for all-gather: private, symmetric, peer. See CollectivesMode for details.
 
 ## --xla_gpu_use_inprocess_lld
 - default: `true`
@@ -1455,17 +1497,29 @@ If an FDO profile is specified and latency hiding scheduler encounters missing i
 
 Add debug information to the executable such as HLO module, asm_text etc.
 
-## --xla_gpu_executable_warn_stuck_timeout
-- default: `10`
+## --xla_gpu_executable_num_compute_streams
+- default: `0`
 - type: **int32**
 
-Set timeout for Rendezvous stuck warning
+Number of additional compute streams to allocate for a GPU executable.
+
+## --xla_gpu_executable_num_communication_streams
+- default: `0`
+- type: **int32**
+
+Number of additional communication streams to allocate for a GPU executable.
 
 ## --xla_gpu_executable_terminate_timeout
 - default: `30`
 - type: **int32**
 
 Set timeout for Rendezvous termination
+
+## --xla_gpu_executable_warn_stuck_timeout
+- default: `10`
+- type: **int32**
+
+Set timeout for Rendezvous stuck warning
 
 ## --xla_gpu_execution_terminate_timeout
 - default: `"inf"`
@@ -1528,6 +1582,12 @@ Enable the experimental explicit stream annotation support. If false, the annota
 
 This controls how many in-flight collectives latency hiding scheduler can schedule.
 
+## --xla_gpu_experimental_collective_start_as_early_as_possible
+- default: `false`
+- type: **bool**
+
+This controls whether collectives should start as early as possible.
+
 ## --xla_gpu_experimental_parallel_async_compute_limit
 - default: `2`
 - type: **int32**
@@ -1544,7 +1604,7 @@ Experimental: Make unset entry computation layout mean auto layout instead of de
 - default: `false`
 - type: **bool**
 
-Makes scatter ops deterministic and enables the use of the scatter determinism expander. This is an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance. If the optimization pass does not support a particular scater op, it will be made deterministic using a slower implementation. Note that even when this flag is disabled, scatter operations may still be deterministic, with the slower implemntation. This is the case when 'xla_gpu_exclude_nondeterministic_ops' is enabled.
+Makes scatter ops deterministic and enables the use of the scatter determinism expander. This is an optimized pass that rewrites scatter operations to ensure deterministic behavior with high performance. If the optimization pass does not support a particular scater op, it will be made deterministic using a slower implementation. Note that even when this flag is disabled, scatter operations may still be deterministic. This is the case when 'xla_gpu_exclude_nondeterministic_ops' or 'xla_gpu_deterministic_ops' is enabled.
 
 ## --xla_gpu_unsupported_enable_all_reduce_decomposer
 - default: `false`
@@ -1714,8 +1774,14 @@ If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
 
 If true, use the MultiGpuBarrierWithNcclKernel in one-shot RaggedAllToAll thunk.
 
+## --xla_gpu_ragged_all_to_all_mode
+- default: `"private"`
+- type: **string**
+
+Memory mode for ragged-all-to-all: private, symmetric, peer. In symmetric mode, the put/signal path is used. See CollectivesMode for details.
+
 ## --xla_gpu_experimental_ragged_all_to_all_zero_copy
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, use the Symmetric Memory mode for MultiGpuBarrierWithNcclKernel
@@ -1780,6 +1846,12 @@ If true, use HloShardingV3 which is a mesh and axis based sharding representatio
 
 If true, opportunistically materialize MeshAxesReplicaGroupList (RGV3) in SPMD partitioner. If false, fallback to legacy V1/V2 representations.
 
+## --xla_sdy_export_all_reduce_scatter
+- default: `false`
+- type: **bool**
+
+Whether to export all sdy.reduce_scatter operations as native StableHLO collectives wrapped in manual computation blocks. If false (default), only operations with unreduced axes are exported this way.
+
 ## --xla_gpu_experimental_enable_checksum_tracing_on_thunks
 - default: `false`
 - type: **bool**
@@ -1791,6 +1863,12 @@ Enables an experimental feature to record checksums of selected thunk inputs/out
 - type: **bool**
 
 When provided, enables an experimental feature to save results of selected thunks.
+
+## --xla_gpu_experimental_thunk_buffer_debug_module_outputs
+- default: `false`
+- type: **bool**
+
+Whether to enable runtime instrumentation (float check, checksum, buffer saver) on all output buffers of an XLA module after all computation is finished. Setting this flag disables instrumentation of thunks not explicitly enabled by other filter flags.
 
 ## --xla_gpu_experimental_thunk_buffer_debug_filter_by_thunk_id_ranges
 - default: `"(none)"`
@@ -1870,14 +1948,14 @@ Dump BufferAssignment analysis.
 
 Controls the VA remapping update strategy for command buffer thunks. See CommandBufferUpdateMode for details.
 
-## --xla_gpu_experimental_move_gemm_conv_autotuner
-- default: `false`
-- type: **bool**
-
-If true, move GEMM and Conv autotuning and post cleanup after fusiion passes.
-
 ## --xla_gpu_experimental_cost_model_gemm_tiling_options
 - default: `""`
 - type: **string**
 
 Experimental options for adjusting cost-model guided GEMM tiling selection; comma-separated list of 'key=val' strings (=val may be omitted); no whitespace around commas.
+
+## --xla_gpu_ptx_compiler_extra_flags
+- default: `""`
+- type: **string**
+
+Whitespace-separated extra flags to pass to the ptxas compiler, e.g. '--maxregcount=32'.

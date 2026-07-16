@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.10.2** (XLA [5a9e73cb](https://github.com/openxla/xla/commit/5a9e73cbd92530cac2ac36f4736a774b2412afe2)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.0** (XLA [131bf41a](https://github.com/openxla/xla/commit/131bf41acb4650e4391a640c3f1859c1c86ad74b)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -173,6 +173,12 @@ Comma-separated list of hlo passes to be enabled. These names must exactly match
 - type: **bool**
 
 Disables all HLO passes. Notes that some passes are necessary for correctness and the invariants that must be satisfied by 'fully optimized' HLO are different for different devices and may change over time. The only 'guarantee', such as it is, is that if you compile XLA and dump the optimized HLO for some graph, you should be able to run it again on the same device with the same build of XLA.
+
+## --xla_run_hlo_passes_starting_from
+- default: `""`
+- type: **string**
+
+Run HLO passes starting from the pass with this name. All prior passes in the pipeline will be skipped.
 
 ## --xla_embed_ir_in_executable
 - default: `false`
@@ -489,6 +495,12 @@ Dumps HLO modules including large constants before and after optimizations. debu
 
 Dumps HLO modules as HloProtos to the directory specified by --xla_dump_to.
 
+## --xla_dump_hlo_as_riegeli
+- default: `false`
+- type: **bool**
+
+Dumps HLO modules as riegeli to the directory specified by --xla_dump_to.
+
 ## --xla_gpu_experimental_dump_fdo_profiles
 - default: `false`
 - type: **bool**
@@ -657,12 +669,6 @@ Generates multiple heaps (i.e., temp buffers) with a size constraint on each hea
 
 Overrides normal multi-threaded compilation setting to use this many threads. Setting to 0 (the default value) means no enforcement.
 
-## --xla_gpu_enable_llvm_module_compilation_parallelism
-- default: `false`
-- type: **bool**
-
-Decides whether we can do LLVM module compilation in a parallelised way. If set to false, then it will be single threaded, otherwise the number of threads depends on the --xla_gpu_force_compilation_parallelism flag and the thread pool supplied to GpuCompiler.
-
 ## --xla_gpu_default_to_alg_dot_bf16_bf16_f32
 - default: `false`
 - type: **bool**
@@ -762,7 +768,7 @@ Enable hoisting of reduce-scatter outside while loops.
 Inflation factor for collectives. If set to > 1, each XLA/GPU collective will execute multiple times (will yield incorrect results)
 
 ## --xla_llvm_force_inline_before_split
-- default: `true`
+- default: `false`
 - type: **bool**
 
 Decide whether to force inline before llvm module split to get a more balanced splits for parallel compilation
@@ -814,6 +820,12 @@ Rewrite layer norm patterns into cuDNN library call.
 - type: **string**
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
+
+## --xla_gpu_enable_collectives_command_buffer_filter
+- default: `"ALLCOLLECTIVES"`
+- type: **string**
+
+Only collectives specified in this filter will be executed in a command buffer. Default is ALLCOLLECTIVES.
 
 ## --xla_gpu_graph_min_graph_size
 - default: `5`
@@ -894,23 +906,35 @@ Timeout in seconds before terminating jobs stuck in NCCL Rendezvous.
 
 Enables NCCL User Buffer Registration. collective_memory_size in the allocator config must also be set to a non-zero value that is large enough to meet peak collective memory usage.
 
+## --xla_gpu_enable_nccl_user_buffers_in_default_space
+- default: `false`
+- type: **bool**
+
+Register NCCL user buffers in default space with allocator memory registration.
+
+## --xla_gpu_enable_allocator_spatial_partitioning
+- default: `true`
+- type: **bool**
+
+Enables spatial partitioning of the GPU BFC allocator so default and collective allocations share one fixed address range. Requires BFC preallocation.
+
 ## --xla_gpu_experimental_enable_nccl_symmetric_buffers
 - default: `false`
 - type: **bool**
 
 Enables NCCL symmetric buffer registration.
 
+## --xla_enable_nccl_symmetric_buffers_for_collectives
+- default: `""`
+- type: **string**
+
+Enables NCCL symmetric buffer registration for specific collectives and sizes. Format: op:size:op_type or op. E.g. AllReduce:1024:F32,AllGather:2048,ReduceScatter,all.
+
 ## --xla_gpu_experimental_aot_compiled_thunks
 - default: `true`
 - type: **bool**
 
 Enables an Ahead-of-Time (AOT) compilation flow where the compiled binary includes the generated Thunks. In contrast, the legacy flow only compiles up to the HLO optimization stage, before Thunk generation.
-
-## --xla_gpu_experimental_enable_nvshmem
-- default: `false`
-- type: **bool**
-
-Enables NVSHMEM.
 
 ## --xla_gpu_temp_buffer_use_separate_color
 - default: `false`
@@ -1335,12 +1359,6 @@ Whether to run windowed einsum using multiple compute streams.
 
 Threshold until which elemental dot emitter is preferred for GEMMs (minimum combined number of elements of both matrices in non-batch dimensions to be considered for a rewrite).
 
-## --xla_gpu_use_embeded_device_lib
-- default: `true`
-- type: **bool**
-
-Whether to use embeded bitcode library in codegen.
-
 ## --xla_gpu_use_memcpy_local_p2p
 - default: `false`
 - type: **bool**
@@ -1364,12 +1382,6 @@ Memory mode for collective-permute: private, symmetric, peer. See CollectivesMod
 - type: **string**
 
 Memory mode for all-gather: private, symmetric, peer. See CollectivesMode for details.
-
-## --xla_gpu_use_inprocess_lld
-- default: `true`
-- type: **bool**
-
-Whether to use lld as a library for the linking.
 
 ## --xla_gpu_dump_autotune_logs_to
 - default: `""`
@@ -1432,7 +1444,7 @@ Experimental: Specify the behavior of per kernel autotuning cache. Supported mod
 Experimental: Specify the directory to read/write autotuner cache to.
 
 ## --xla_gpu_experimental_autotune_backends
-- default: `""`
+- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION"`
 - type: **string**
 
 Backends to enable for autotuning. Comma-separated (no spaces). Examples:
@@ -1466,6 +1478,12 @@ Experimental: Enable command buffers while a profiling active. By default, enabl
 - type: **int32**
 
 Limit for the number of kernel configurations (plans) to use during autotuning of cuDNN GEMM fusions.
+
+## --xla_gpu_cudnn_deviceless_compilation_mode
+- default: `"CUDNN_DEVICELESS_COMPILATION_DISABLED"`
+- type: **string**
+
+When to compile cuDNN fusions in deviceless mode (no live cuDNN handle). Available options: CUDNN_DEVICELESS_COMPILATION_DISABLED, CUDNN_DEVICELESS_COMPILATION_AUTO, CUDNN_DEVICELESS_COMPILATION_ALWAYS.
 
 ## --xla_gpu_enable_triton_gemm_int4
 - default: `true`
@@ -1666,6 +1684,12 @@ Crash if HloPassFix can not converge after a fixed number of iterations.
 
 Perform hash-based cycle detection in fixed-point loops.
 
+## --xla_dump_compact_gte
+- default: `true`
+- type: **bool**
+
+If true, GTE (get-tuple-element) instructions will be compacted when printing HLO.
+
 ## --xla_gpu_experimental_enable_heuristic_collective_combining
 - default: `false`
 - type: **bool**
@@ -1769,7 +1793,7 @@ If true, use the raft::matrix::select_k implementation of TopK.
 If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
 
 ## --xla_gpu_experimental_ragged_all_to_all_use_barrier_with_nccl
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, use the MultiGpuBarrierWithNcclKernel in one-shot RaggedAllToAll thunk.
@@ -1780,11 +1804,17 @@ If true, use the MultiGpuBarrierWithNcclKernel in one-shot RaggedAllToAll thunk.
 
 Memory mode for ragged-all-to-all: private, symmetric, peer. In symmetric mode, the put/signal path is used. See CollectivesMode for details.
 
-## --xla_gpu_experimental_ragged_all_to_all_zero_copy
-- default: `true`
+## --xla_gpu_enable_gxl_ragged_all_to_all
+- default: `false`
 - type: **bool**
 
-If true, use the Symmetric Memory mode for MultiGpuBarrierWithNcclKernel
+If true, enable the GXL library for NCCL collectives.
+
+## --xla_gpu_gxl_scratch_size_bytes
+- default: `67108864`
+- type: **int64**
+
+Size in bytes of the scratch buffer for GXL collectives.
 
 ## --xla_gpu_experimental_use_ragged_dot_grouped_gemm
 - default: `true`
@@ -1904,13 +1934,13 @@ If true, enable experimental tiling propagation.
 - default: `"DETECTION_MODE_NONE"`
 - type: **string**
 
-Controls the behavior of the NaN detector pass that checks for presence of NaN values in kernel outputs. Acceptable values are: 'none', 'warning', and 'fail'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or fail the execution if NaNs are detected.
+Controls the behavior of the NaN detector pass that checks for presence of NaN values in kernel outputs. Acceptable values are: 'none', 'warning', 'fail', and 'dump'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or crash (possibly creating a crash dump) if NaNs are detected.
 
 ## --xla_gpu_detect_inf
 - default: `"DETECTION_MODE_NONE"`
 - type: **string**
 
-Controls the behavior of the Inf detector pass that checks for presence of Inf values in kernel outputs. Acceptable values are: 'none', 'warning', and 'fail'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or fail the execution if Infs are detected.
+Controls the behavior of the Inf detector pass that checks for presence of Inf values in kernel outputs. Acceptable values are: 'none', 'warning', 'fail', and 'dump'. 'none' is the default. If other than 'none' value is provided, additional thunks will be added to detect and warn or crash (possibly creating a crash dump) if Infs are detected.
 
 ## --xla_gpu_log_minmax
 - default: `false`
@@ -1936,6 +1966,12 @@ Prints statistics about the HLO passes: how many times each pass was run, and ho
 
 Enable PDL (Programmatic Dependent Launch).
 
+## --xla_gpu_enable_pdl_launch
+- default: `true`
+- type: **bool**
+
+Enable use of PDL launch instructions.
+
 ## --xla_dump_buffer_assignment_analysis
 - default: `true`
 - type: **bool**
@@ -1946,7 +1982,7 @@ Dump BufferAssignment analysis.
 - default: `"ALWAYS_UPDATE"`
 - type: **string**
 
-Controls the VA remapping update strategy for command buffer thunks. See CommandBufferUpdateMode for details.
+Controls the VA remapping allocation strategy for command buffer thunks. See CommandBufferUpdateMode for details.
 
 ## --xla_gpu_experimental_cost_model_gemm_tiling_options
 - default: `""`

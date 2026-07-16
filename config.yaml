@@ -1,5 +1,5 @@
 baseURL: 'https://guides.lw1.at/'
-languageCode: en-us
+locale: en-us
 title: guides.lw1.at
 enableGitInfo: true
 enableRobotsTXT: true
@@ -27,6 +27,9 @@ permalinks:
   static_pages: /:slug/
 taxonomies:
   category: categories
+security:
+  allowContent:
+    - '.*'
 #ignoreFiles:
 #  - \.mp4$
 #  - \.webm$

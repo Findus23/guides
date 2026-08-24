@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.0** (XLA [131bf41a](https://github.com/openxla/xla/commit/131bf41acb4650e4391a640c3f1859c1c86ad74b)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.1** (XLA [dcf304bc](https://github.com/openxla/xla/commit/dcf304bc5dca1932b99f740b911dbd73631a1a69)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -79,7 +79,7 @@ Enable unsafe fast-math optimizations in the CPU compiler; this may produce fast
 Enable platform dependent math in the CPU compiler; this may produce faster code at the expense of consistent results across CPUs.
 
 ## --xla_cpu_experimental_enable_tiling_propagation
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, enable experimental tiling propagation for CPU.
@@ -290,12 +290,6 @@ Generate calls to ACL (Arm Compute Library) in the CPU backend.
 
 Set CPU optimization preset (FAST_RUNTIME, FAST_COMPILE)
 
-## --xla_cpu_use_fusion_emitters
-- default: `true`
-- type: **bool**
-
-Use fusion emitters for code generation in the CPU backend.
-
 ## --xla_cpu_use_thunk_runtime
 - default: `true`
 - type: **bool**
@@ -307,6 +301,12 @@ Deprecated.
 - type: **bool**
 
 Use XNNPACK for supported operations.
+
+## --xla_cpu_use_new_xtile_lowering
+- default: `false`
+- type: **bool**
+
+Use new xtile lowering.
 
 ## --xla_cpu_experimental_xnn_fusion_type
 - default: `""`
@@ -410,6 +410,12 @@ Set GEMM and Convolution auto-tuning level. 0 = off; 1 = on; 2 = on+init; 3 = on
 - type: **int64**
 
 Maximal number of GEMM solutions to consider for autotuning: 0 means consider all solutions returned by the GEMM library.
+
+## --xla_gpu_blas_max_algorithms
+- default: `0`
+- type: **int64**
+
+Maximum number of BLAS library algorithms to evaluate during autotuning. Setting this to a lower value (e.g., 16 or 32) speeds up compilation at the cost of potentially missing the optimal algorithm. Setting to 0 uses the default (128 for most BLAS libraries).
 
 ## --xla_gpu_fusion_autotune_top_k_configs
 - default: `1`
@@ -706,6 +712,12 @@ Enables while loop unrolling features. `WHILE_LOOP_UNROLLING_DOUBLE_BUFFER` unro
 
 Size threshold (in bytes) for the GPU all-reduce combiner.
 
+## --xla_gpu_all_reduce_splitter_ignore_profitability_check
+- default: `false`
+- type: **bool**
+
+If true, AllReduceSplitter rewrites AR+DS patterns even when the profitability heuristic does not find an existing all-reduce that shares either of the post-split replica group topologies.
+
 ## --xla_gpu_all_gather_combine_threshold_bytes
 - default: `31457287`
 - type: **int64**
@@ -767,12 +779,6 @@ Enable hoisting of reduce-scatter outside while loops.
 
 Inflation factor for collectives. If set to > 1, each XLA/GPU collective will execute multiple times (will yield incorrect results)
 
-## --xla_llvm_force_inline_before_split
-- default: `false`
-- type: **bool**
-
-Decide whether to force inline before llvm module split to get a more balanced splits for parallel compilation
-
 ## --xla_gpu_enable_reassociation_for_converted_ar
 - default: `true`
 - type: **bool**
@@ -796,12 +802,6 @@ Every time an HLO module is run, dumps an HloUnoptimizedSnapshot to the director
 - type: **bool**
 
 [Deprecated, do not use]
-
-## --xla_gpu_fused_attention_use_cudnn_rng
-- default: `false`
-- type: **bool**
-
-Use cudnn random number generator for fused attention kernel.
 
 ## --xla_gpu_enable_cudnn_layer_norm
 - default: `false`
@@ -876,7 +876,7 @@ Enable dumping MLIR using pretty print form. If set to false, the dumped MLIR wi
 Enable dumping the full HloModuleConfig proto.
 
 ## --xla_gpu_enable_dynamic_slice_fusion
-- default: `false`
+- default: `true`
 - type: **bool**
 - **[Stable]**
 
@@ -930,12 +930,6 @@ Enables NCCL symmetric buffer registration.
 
 Enables NCCL symmetric buffer registration for specific collectives and sizes. Format: op:size:op_type or op. E.g. AllReduce:1024:F32,AllGather:2048,ReduceScatter,all.
 
-## --xla_gpu_experimental_aot_compiled_thunks
-- default: `true`
-- type: **bool**
-
-Enables an Ahead-of-Time (AOT) compilation flow where the compiled binary includes the generated Thunks. In contrast, the legacy flow only compiles up to the HLO optimization stage, before Thunk generation.
-
 ## --xla_gpu_temp_buffer_use_separate_color
 - default: `false`
 - type: **bool**
@@ -965,6 +959,12 @@ Maximum number of ranks associated with a root rank to initialize a NCCL communi
 - type: **int64**
 
 Amount of padding the redzone allocator will put on one side of each buffer it allocates. (So the buffer's total size will be increased by 2x this value.)
+
+## --xla_while_loop_all_reduce_dus_code_motion_max_size_bytes
+- default: `10240`
+- type: **int64**
+
+Maximum size (in bytes) of an all-reduce that the while-loop all-reduce code motion pass is allowed to hoist out of a loop for dynamic update slice patterns.
 
 ## --xla_gpu_shape_checks
 - default: `"RUNTIME"`
@@ -1030,23 +1030,41 @@ Enable async stream to have the highest priority.
 ## --xla_gpu_enable_pipelined_all_reduce
 - default: `false`
 - type: **bool**
+
+[Deprecated] True maps to --xla_gpu_pipeline_all_reduce=on and false maps to --xla_gpu_pipeline_all_reduce=default.
+
+## --xla_gpu_pipeline_all_reduce
+- default: `"default"`
+- type: **string**
 - **[Stable]**
 
-Enable pipelinling of all-reduce instructions.
+Controls all-reduce pipelining: default follows optimization effort, off disables the pass, on considers all structurally eligible all-reduces, and explicit considers only all-reduces carrying a boolean-true is_pipelineable frontend attribute.
 
 ## --xla_gpu_enable_pipelined_all_gather
 - default: `false`
 - type: **bool**
+
+[Deprecated] True maps to --xla_gpu_pipeline_all_gather=on and false maps to --xla_gpu_pipeline_all_gather=default.
+
+## --xla_gpu_pipeline_all_gather
+- default: `"default"`
+- type: **string**
 - **[Stable]**
 
-Enable pipelinling of all-gather instructions.
+Controls all-gather pipelining: default follows optimization effort, off disables the pass, on considers all structurally eligible all-gathers, and explicit considers only all-gathers carrying a boolean-true is_pipelineable frontend attribute.
 
 ## --xla_gpu_enable_pipelined_reduce_scatter
 - default: `true`
 - type: **bool**
+
+[Deprecated] True maps to --xla_gpu_pipeline_reduce_scatter=on and false maps to --xla_gpu_pipeline_reduce_scatter=default.
+
+## --xla_gpu_pipeline_reduce_scatter
+- default: `"on"`
+- type: **string**
 - **[Stable]**
 
-Enable pipelinling of reduce-scatter instructions.
+Controls reduce-scatter pipelining: default follows optimization effort, off disables the pass, on considers all structurally eligible reduce-scatters, and explicit considers only reduce-scatters carrying a boolean-true is_pipelineable frontend attribute.
 
 ## --xla_gpu_enable_pipelined_host_offloading
 - default: `false`
@@ -1109,6 +1127,12 @@ Whether to use Triton-based matrix multiplication.
 - type: **bool**
 
 Enable Triton multi-output fusions.
+
+## --xla_gpu_experimental_enable_same_shape_multi_output_fusion
+- default: `false`
+- type: **bool**
+
+Enable experimental support for multi-output block-level emitter fusions where all roots share the same shape.
 
 ## --xla_gpu_verify_triton_fusion_numerics
 - default: `false`
@@ -1299,6 +1323,18 @@ Control CUB behavior during deviceless compilation. Available options: DEVICELES
 
 Threshold to enable windowed einsum (collective matmul) in MB.Einsums that have partitioned operand(can be either LHS or RHS) that's larger than this threshold will be transformed to use windowed einsums.Default is 100000
 
+## --xla_gpu_trace_annotation_level
+- default: `0`
+- type: **int32**
+
+GPU trace annotation detail level. Level 0 emits compact instruction names and basic structured payloads. Level 1 additionally emits detailed HLO and collective metadata in XProf annotation names and structured payloads. NVTX names remain compact.
+
+## --xla_gpu_enable_cupti_multi_subscriber
+- default: `true`
+- type: **bool**
+
+Enable CUPTI V2 multi-subscriber APIs for GPU profiling when available.
+
 ## --xla_gpu_operand_bytes_threshold_for_windowed_einsum
 - default: `-1`
 - type: **int64**
@@ -1437,11 +1473,11 @@ Experimental: Maintain a per-fusion autotune cache in the given directory. XLA w
 
 Experimental: Specify the behavior of per kernel autotuning cache. Supported modes: read (provides readonly access to the cache), update (loads if the cache exists, runs autotuning and dumps the result otherwise). Default: update.
 
-## --xla_gpu_experimental_autotuner_cache_dir
-- default: `""`
-- type: **string**
+## --xla_gpu_use_new_autotune_cache_format
+- default: `false`
+- type: **bool**
 
-Experimental: Specify the directory to read/write autotuner cache to.
+Whether to use the new protos for the autotune cache (xla.autotuner.AutotuneCache rather than xla.AutotuneResults.
 
 ## --xla_gpu_experimental_autotune_backends
 - default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION"`
@@ -1594,11 +1630,23 @@ Enable optimizations that assume finite math, i.e., no NaN.
 
 Enable the experimental explicit stream annotation support. If false, the annotations are ignored.
 
+## --xla_gpu_experimental_use_collective_kernels
+- default: `"ALLREDUCE"`
+- type: **string**
+
+Experimental: comma-separated filter of collective ops that should use custom kernels (e.g. Triton one-shot / two-shot) instead of NCCL. Accepted values: ALL_REDUCE, ALL_GATHER (case-insensitive; the COLLECTIVE_KERNEL_ prefix may be omitted). Supports +/- incremental modifiers (e.g. +ALL_REDUCE,-ALL_GATHER). The deprecated --xla_gpu_unsupported_use_all_reduce_one_shot_kernel flag also adds ALL_REDUCE to this filter for legacy compatibility.
+
 ## --xla_gpu_experimental_parallel_collective_overlap_limit
 - default: `1`
 - type: **int32**
 
 This controls how many in-flight collectives latency hiding scheduler can schedule.
+
+## --xla_gpu_collective_domain_assignment
+- default: `""`
+- type: **string**
+
+Comma-separated list of collective communication domains to assign automatically.
 
 ## --xla_gpu_experimental_collective_start_as_early_as_possible
 - default: `false`
@@ -1606,11 +1654,29 @@ This controls how many in-flight collectives latency hiding scheduler can schedu
 
 This controls whether collectives should start as early as possible.
 
+## --xla_gpu_experimental_enable_selective_memcpy_overlap
+- default: `false`
+- type: **bool**
+
+When enabled, the GPU latency hiding scheduler selectively overlaps async device-to-device (D2D) memcpys with compute-bound kernels.
+
 ## --xla_gpu_experimental_parallel_async_compute_limit
 - default: `2`
 - type: **int32**
 
 This controls how many in-flight asynchronous computations latency hiding scheduler can schedule.
+
+## --xla_gpu_experimental_scheduler_memory_fencing_threshold_bytes
+- default: `-1`
+- type: **int64**
+
+Buffers of at least this size in bytes are fenced by the SchedulerMemoryFencing pass. -1 disables the pass, 0 uses 1% of the scheduler memory limit, and positive values are capped at the scheduler memory limit.
+
+## --xla_gpu_experimental_scheduler_memory_fencing_slack_windows
+- default: `1`
+- type: **int32**
+
+How many async operation windows the users of a fenced buffer may be deferred past the buffer's last-use window in the pre-LHS schedule.
 
 ## --xla_pjrt_allow_auto_layout_in_hlo
 - default: `false`
@@ -1637,7 +1703,7 @@ Internal: Enable the AllReduceDecomposer, an unsupported pass that rewrites smal
 Internal: Enable the RaggedAllToAllDecomposer, an experimental pass that rewrites ragged-all-to-all as a dense all-to-all operation.
 
 ## --xla_gpu_unsupported_enable_ragged_all_to_all_multi_host_decomposer
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Internal: Enable the RaggedAllToAllMultiHostDecomposer, an experimental pass to decompose ragged-all-to-all operation in intra-host and inter-host parts.
@@ -1652,7 +1718,7 @@ Internal: Override the number of devices in the fast interconnect domain. Defaul
 - default: `true`
 - type: **bool**
 
-Internal: Enable the one-shot kernel for single-host all-reduce operations.
+DEPRECATED: Use --xla_gpu_experimental_use_collective_kernels=ALL_REDUCE instead. Internal: Enable the one-shot kernel for single-host all-reduce operations.
 
 ## --xla_gpu_unsupported_use_ragged_all_to_all_one_shot_kernel
 - default: `true`
@@ -1780,18 +1846,6 @@ Controls the behavior of the unstable reduction detector pass that checks for un
 
 Controls the behavior of the unstable reduction detector pass that checks for unstable reductions in HLO computations after optimizations. Acceptable values are: 'none', 'log', and 'crash'. 'none' is the default.
 
-## --xla_gpu_experimental_use_raft_select_k
-- default: `false`
-- type: **bool**
-
-If true, use the raft::matrix::select_k implementation of TopK.
-
-## --xla_gpu_experimental_ragged_all_to_all_use_barrier
-- default: `true`
-- type: **bool**
-
-If true, use the MultiGpuBarrierKernel in one-shot RaggedAllToAll thunk.
-
 ## --xla_gpu_experimental_ragged_all_to_all_use_barrier_with_nccl
 - default: `true`
 - type: **bool**
@@ -1815,6 +1869,24 @@ If true, enable the GXL library for NCCL collectives.
 - type: **int64**
 
 Size in bytes of the scratch buffer for GXL collectives.
+
+## --xla_gpu_experimental_ragged_all_to_all_use_device_kernel
+- default: `false`
+- type: **bool**
+
+If true, use the device-initiated (NCCL GIN + LSA) kernel for ragged-all-to-all. Requires NCCL >= 2.29.
+
+## --xla_gpu_allow_ragged_all_to_all_nccl_send_recv_fallback
+- default: `false`
+- type: **bool**
+
+If true, allow fallback to NCCL Send/Recv path for ragged-all-to-all.
+
+## --xla_gpu_async_copy_min_bytes
+- default: `-1`
+- type: **int64**
+
+Minimum transfer size (in bytes) for a device-to-device copy to be converted to an async copy-start/copy-done pair. Set to -1 to disable async device-to-device copies.
 
 ## --xla_gpu_experimental_use_ragged_dot_grouped_gemm
 - default: `true`
@@ -1875,6 +1947,12 @@ If true, use HloShardingV3 which is a mesh and axis based sharding representatio
 - type: **bool**
 
 If true, opportunistically materialize MeshAxesReplicaGroupList (RGV3) in SPMD partitioner. If false, fallback to legacy V1/V2 representations.
+
+## --xla_spmd_enable_dynamic_slice_collective_broadcast
+- default: `false`
+- type: **bool**
+
+If true, enable the GPU SPMD lowering that broadcasts a single dynamic slice from its sharded owner instead of all-gathering the full operand.
 
 ## --xla_sdy_export_all_reduce_scatter
 - default: `false`
@@ -1989,6 +2067,12 @@ Controls the VA remapping allocation strategy for command buffer thunks. See Com
 - type: **string**
 
 Experimental options for adjusting cost-model guided GEMM tiling selection; comma-separated list of 'key=val' strings (=val may be omitted); no whitespace around commas.
+
+## --xla_gpu_experimental_cost_model_gemm_tiling_default
+- default: `false`
+- type: **bool**
+
+If true, uses the cost model to suggest default GEMM tilings when autotuning is disabled (e.g., in deviceless or deterministic mode).
 
 ## --xla_gpu_ptx_compiler_extra_flags
 - default: `""`

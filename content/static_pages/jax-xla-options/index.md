@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.1** (XLA [dcf304bc](https://github.com/openxla/xla/commit/dcf304bc5dca1932b99f740b911dbd73631a1a69)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.2** (XLA [f60be94c](https://github.com/openxla/xla/commit/f60be94c9c5d1e1340a6259433ead57824c37293)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -160,13 +160,19 @@ Numerical optimization level for the XLA compiler backend.
 - default: `""`
 - type: **string**
 
-Comma-separated list of hlo passes to be disabled. These names must exactly match the passes' names; no whitespace around commas.
+Comma-separated list of hlo passes to be disabled (no whitespace around commas). Each entry may be: a plain pass name ('algsimp', matches every invocation); a name with a 0-based occurrence index ('algsimp:2', the 3rd invocation in the module); a name scoped to its immediate parent pipeline ('simplification/algsimp'); a scoped name with a 0-based index within that pipeline ('simplification/algsimp:2'); or a 0-based raw pass_id ('@42').
+
+## --xla_gpu_hlo_custom_call_allowlist
+- default: `""`
+- type: **string**
+
+Comma-separated allowlist of FFI custom-call target names permitted for this module. When non-empty, creating an FFI CustomCallThunk for a target that is not on this list fails compilation. Empty (the default) disables the check. FFI-only: legacy custom calls and custom kernels (e.g. PTX) are not gated. Surrounding whitespace around entries is ignored.
 
 ## --xla_enable_hlo_passes_only
 - default: `""`
 - type: **string**
 
-Comma-separated list of hlo passes to be enabled. These names must exactly match the passes' names; no whitespace around commas. The unspecified passes are all disabled.
+Comma-separated list of hlo passes to be enabled; all unspecified passes are disabled (no whitespace around commas). Entries accept the same syntax as xla_disable_hlo_passes: plain name ('algsimp'), occurrence ('algsimp:2'), pipeline scope ('simplification/algsimp'), scoped occurrence ('simplification/algsimp:2'), or raw pass_id ('@42').
 
 ## --xla_disable_all_hlo_passes
 - default: `false`
@@ -827,6 +833,12 @@ The types of the commands that are recorded into command buffers. It can either 
 
 Only collectives specified in this filter will be executed in a command buffer. Default is ALLCOLLECTIVES.
 
+## --xla_gpu_unsupported_use_cross_host_one_shot_kernel
+- default: `""`
+- type: **string**
+
+Enable cross-host one-shot kernel for specified collectives.
+
 ## --xla_gpu_graph_min_graph_size
 - default: `5`
 - type: **int32**
@@ -1268,6 +1280,12 @@ cuDNN GEMM fusion level; higher level corresponds to more kinds of fused operati
 
 Replace custom calls with noop operations.
 
+## --xla_cpu_mock_custom_calls
+- default: `false`
+- type: **bool**
+
+Replace custom calls with noop operations on CPU.
+
 ## --xla_gpu_enable_while_loop_double_buffering
 - default: `false`
 - type: **bool**
@@ -1401,6 +1419,12 @@ Threshold until which elemental dot emitter is preferred for GEMMs (minimum comb
 
 Whether to use memcpy for local p2p communication.
 
+## --xla_gpu_dump_cost_model_top_k_candidates_to
+- default: `""`
+- type: **string**
+
+File to write cost model top-k candidates to.
+
 ## --xla_gpu_collective_permute_connected_components
 - default: `false`
 - type: **bool**
@@ -1474,13 +1498,37 @@ Experimental: Maintain a per-fusion autotune cache in the given directory. XLA w
 Experimental: Specify the behavior of per kernel autotuning cache. Supported modes: read (provides readonly access to the cache), update (loads if the cache exists, runs autotuning and dumps the result otherwise). Default: update.
 
 ## --xla_gpu_use_new_autotune_cache_format
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Whether to use the new protos for the autotune cache (xla.autotuner.AutotuneCache rather than xla.AutotuneResults.
 
+## --xla_compile_all_supported_configs
+- default: `false`
+- type: **bool**
+
+When autotuning is disabled, if true, compiles all supported configs in parallel before returning the first successful one.
+
+## --xla_deduplicate_backend_configs_min_size
+- default: `9223372036854775807`
+- type: **int64**
+
+Minimum backend_config size (in bytes) to be eligible for deduplication into payloads during serialization. Configs smaller than this threshold are kept inline. Default is MAX_INT (feature disabled).
+
+## --xla_force_config
+- default: `""`
+- type: **string**
+
+Single serialized config to override config of all instructions, bypassing cache and autotuning.
+
+## --xla_candidate_configs_file
+- default: `""`
+- type: **string**
+
+File containing a list of serialized configs to override supported configs for all instructions.
+
 ## --xla_gpu_experimental_autotune_backends
-- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION"`
+- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU"`
 - type: **string**
 
 Backends to enable for autotuning. Comma-separated (no spaces). Examples:
@@ -1490,6 +1538,12 @@ Backends to enable for autotuning. Comma-separated (no spaces). Examples:
   '+cudnn,-cublas' (adds/removes from defaults)
 
 Available: cudnn, triton, cublas, cublaslt etc, check xla.autotuner.Backend for the full list.
+
+## --xla_autotuner_preferred_backend
+- default: `"UNSPECIFIED_BACKEND"`
+- type: **string**
+
+Preferred backend for autotuning. If set and the preferred backend generates valid configs for an instruction, the autotuner will pick a config from this backend even if another backend is faster. If no valid config from the preferred backend is available, the autotuner falls back to other backends. Available: cudnn, triton, cublas, cublaslt, etc.
 
 ## --xla_gpu_experimental_all_fusions_with_triton
 - default: `false`
@@ -1641,6 +1695,12 @@ Experimental: comma-separated filter of collective ops that should use custom ke
 - type: **int32**
 
 This controls how many in-flight collectives latency hiding scheduler can schedule.
+
+## --xla_gpu_experimental_parallel_scale_up_collective_overlap_limit
+- default: `1`
+- type: **int32**
+
+Controls how many scale-up-fabric collectives the latency hiding scheduler can keep in flight. A value of 0 means unlimited.
 
 ## --xla_gpu_collective_domain_assignment
 - default: `""`
@@ -1870,6 +1930,18 @@ If true, enable the GXL library for NCCL collectives.
 
 Size in bytes of the scratch buffer for GXL collectives.
 
+## --xla_gpu_enable_persistent_symmetric_memory
+- default: `false`
+- type: **bool**
+
+If true, allows skipping defensive copy insertion for S(1) collective memory parameters that have input-output aliasing and execute on all available devices in the topology.
+
+## --xla_gpu_experimental_enable_raft_for_stable_topk
+- default: `false`
+- type: **bool**
+
+If true, enables RAFT for stable TopK.
+
 ## --xla_gpu_experimental_ragged_all_to_all_use_device_kernel
 - default: `false`
 - type: **bool**
@@ -1937,7 +2009,7 @@ Set timeout for CPU collectives
 If true, keep shardings after SPMD.
 
 ## --xla_enable_hlo_sharding_v3
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, use HloShardingV3 which is a mesh and axis based sharding representation.
@@ -2031,6 +2103,12 @@ If true, log min/max values from kernel outputs.
 - type: **bool**
 
 If true, exit early from the layout assignment pass after assigning layouts to entry computations.
+
+## --xla_gpu_experimental_early_exit
+- default: `"EARLY_EXIT_POINT_UNSET"`
+- type: **string**
+
+Exits compilation early at the specified point. Available options: EARLY_EXIT_POINT_UNSET, EARLY_EXIT_POINT_AFTER_CONFIG_ASSIGNMENT.
 
 ## --xla_gpu_print_compilation_stats
 - default: `false`

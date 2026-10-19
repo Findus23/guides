@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.11.2** (XLA [f60be94c](https://github.com/openxla/xla/commit/f60be94c9c5d1e1340a6259433ead57824c37293)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.12.0** (XLA [d8679698](https://github.com/openxla/xla/commit/d867969800d4a8fd045505eabc65e1e66f30794f)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -309,7 +309,7 @@ Deprecated.
 Use XNNPACK for supported operations.
 
 ## --xla_cpu_use_new_xtile_lowering
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Use new xtile lowering.
@@ -384,7 +384,7 @@ Preferred vector width for the XLA:CPU LLVM backend.
 - default: `""`
 - type: **string**
 
-Maximum ISA that XLA:CPU LLVM backend will codegen, i.e., it will not use newer instructions. Available values: SSE4_2, AVX, AVX2, AVX512, AVX512_VNNI, AVX512_BF16, AMX, and AMX_FP16. (`AMX` will enable both `AMX_BF16` and `AMX_INT8` instructions.)
+Maximum ISA that XLA:CPU LLVM backend will codegen, i.e., it will not use newer instructions. Available values: SSE4_2, AVX, AVX2, AVX512, AVX512_VNNI, AVX512_BF16, AMX, AMX_FP16, and AMX_FP8. (`AMX` will enable both `AMX_BF16` and `AMX_INT8` instructions.)
 
 ## --xla_cpu_emitter_verification_level
 - default: `0`
@@ -822,7 +822,7 @@ Rewrite layer norm patterns into cuDNN library call.
 [Deprecated] Use cuBLASLt for GEMMs when possible.
 
 ## --xla_gpu_enable_command_buffer
-- default: `"CONDITIONAL, CUBLAS, CUBLASLT, CUDNN, CUSTOM_CALL, DYNAMIC_SLICE_FUSION, FUSION"`
+- default: `"COLLECTIVES_KERNEL, CONDITIONAL, CUBLAS, CUBLASLT, CUDNN, CUSTOM_CALL, DYNAMIC_SLICE_FUSION, FUSION"`
 - type: **string**
 
 The types of the commands that are recorded into command buffers. It can either be a list of command types or a list of command types with + and - as prefix, which indicate adding or removing a command type to/from the default list.
@@ -834,7 +834,7 @@ The types of the commands that are recorded into command buffers. It can either 
 Only collectives specified in this filter will be executed in a command buffer. Default is ALLCOLLECTIVES.
 
 ## --xla_gpu_unsupported_use_cross_host_one_shot_kernel
-- default: `""`
+- default: `"ALLCOLLECTIVES"`
 - type: **string**
 
 Enable cross-host one-shot kernel for specified collectives.
@@ -906,6 +906,18 @@ Replaces broadcast(0) scan-accumulator init with AllocateBuffer when the body's 
 
 When true, DynamicSliceFusionV2Thunk verifies at runtime that annotated DynamicSliceConfig offsets match actual XLA-computed DS/DUS offsets. Adds D2H sync overhead — for debugging only.
 
+## --xla_gpu_experimental_enable_dynamic_slice_table_offsets
+- default: `false`
+- type: **bool**
+
+Enables DynamicSliceAnnotator to represent non-linear DS/DUS offsets as a table with one entry per loop iteration.
+
+## --xla_gpu_experimental_enable_dynamic_slice_extended_offsets
+- default: `false`
+- type: **bool**
+
+Enables divide, remainder, minimum, maximum, and clamp operations in dynamic-slice fusion offset expressions.
+
 ## --xla_gpu_nccl_termination_timeout_seconds
 - default: `-1`
 - type: **int64**
@@ -935,6 +947,12 @@ Enables spatial partitioning of the GPU BFC allocator so default and collective 
 - type: **bool**
 
 Enables NCCL symmetric buffer registration.
+
+## --xla_gpu_experimental_emit_collective_reduce
+- default: `false`
+- type: **bool**
+
+Enables emitting a CollectiveReduceThunk for kCollectiveReduce HLO instructions. Kept off by default to preserve the forward compatibility window until the runtime support for the thunk has rolled out.
 
 ## --xla_enable_nccl_symmetric_buffers_for_collectives
 - default: `""`
@@ -1159,7 +1177,7 @@ Whether to verify that the numeric results of Triton fusions match the results o
 Enable cuDNN frontend for int8x32 convolutions with reordered filter.
 
 ## --xla_gpu_experimental_gemm_fusion_v2
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Enable experimental rewrite of GEMM fusion pass for Triton.
@@ -1323,6 +1341,12 @@ Sets how often we verify the generated llvm modules. Higher levels mean more fre
 
 Filename for GPU TargetConfig. Triggers devicless compilation: attached device is ignored, and the proto is queried instead
 
+## --xla_gpu_topology_filename
+- default: `""`
+- type: **string**
+
+Filename for GpuTopologyProto or inline topology spec ([platform:]num_partitionsxnum_hosts_per_partitionxnum_devices_per_host). Triggers deviceless compilation when target config is present.
+
 ## --xla_gpu_enable_cub_radix_sort
 - default: `true`
 - type: **bool**
@@ -1372,7 +1396,7 @@ Enabling this flag will attempt to redirect every fusion possible to the Triton 
 Use libnvptxcompiler for PTX-to-GPU-assembly compilation instead of calling ptxas.
 
 ## --xla_gpu_enable_libnvjitlink
-- default: `false`
+- default: `true`
 - type: **bool**
 
 Use libnvjitlink for PTX-to-GPU-assembly compilation instead of calling ptxas.
@@ -1528,7 +1552,7 @@ Single serialized config to override config of all instructions, bypassing cache
 File containing a list of serialized configs to override supported configs for all instructions.
 
 ## --xla_gpu_experimental_autotune_backends
-- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU"`
+- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU, TENSOR_IR"`
 - type: **string**
 
 Backends to enable for autotuning. Comma-separated (no spaces). Examples:
@@ -1633,7 +1657,13 @@ Set timeout for Rendezvous stuck warning
 - default: `"inf"`
 - type: **string**
 
-Set timeout for XLA:GPU execution to prevent undetected deadlocks
+Set timeout for host-side XLA:GPU execution (inf to disable); does not wait for asynchronous device work
+
+## --xla_gpu_device_execution_terminate_timeout
+- default: `"inf"`
+- type: **string**
+
+Set timeout to abort if enqueued XLA:GPU device work does not complete after host dispatch (inf to disable)
 
 ## --xla_gpu_execution_progress_tracking
 - default: `0`
@@ -1685,10 +1715,10 @@ Enable optimizations that assume finite math, i.e., no NaN.
 Enable the experimental explicit stream annotation support. If false, the annotations are ignored.
 
 ## --xla_gpu_experimental_use_collective_kernels
-- default: `"ALLREDUCE"`
+- default: `"COLLECTIVE_KERNEL_ALL_REDUCE"`
 - type: **string**
 
-Experimental: comma-separated filter of collective ops that should use custom kernels (e.g. Triton one-shot / two-shot) instead of NCCL. Accepted values: ALL_REDUCE, ALL_GATHER (case-insensitive; the COLLECTIVE_KERNEL_ prefix may be omitted). Supports +/- incremental modifiers (e.g. +ALL_REDUCE,-ALL_GATHER). The deprecated --xla_gpu_unsupported_use_all_reduce_one_shot_kernel flag also adds ALL_REDUCE to this filter for legacy compatibility.
+Experimental: comma-separated filter of collective ops that should use custom kernels (e.g. Triton one-shot / two-shot) instead of NCCL. Accepted values: ALL_REDUCE, ALL_GATHER, REDUCE_SCATTER, ALL_TO_ALL, ALL_COLLECTIVES (case-insensitive; the COLLECTIVE_KERNEL_ prefix may be omitted). Supports +/- incremental modifiers (e.g. +ALL_REDUCE,-ALL_GATHER). The deprecated --xla_gpu_unsupported_use_all_reduce_one_shot_kernel flag also adds ALL_REDUCE to this filter for legacy compatibility.
 
 ## --xla_gpu_experimental_parallel_collective_overlap_limit
 - default: `1`
@@ -1942,6 +1972,12 @@ If true, allows skipping defensive copy insertion for S(1) collective memory par
 
 If true, enables RAFT for stable TopK.
 
+## --xla_gpu_experimental_enable_tensor_ir
+- default: `false`
+- type: **bool**
+
+If true, the GPU autotuner may assign fusions to the experimental TensorIR (CUDA Tile) emitter. Requires sm_90+ and CUDA 13.3+ (tileiras).
+
 ## --xla_gpu_experimental_ragged_all_to_all_use_device_kernel
 - default: `false`
 - type: **bool**
@@ -1983,6 +2019,12 @@ If true, use cuDNN fusion for ragged dot operations.
 - type: **bool**
 
 If true, use the Triton emitter for scaled dot.
+
+## --xla_gpu_experimental_vmm_disabled
+- default: `false`
+- type: **bool**
+
+If true, disables CUDA Virtual Memory Management (VMM) APIs for device memory allocation and collective fusion.
 
 ## --xla_cpu_collective_call_warn_stuck_timeout_seconds
 - default: `20`
@@ -2075,7 +2117,7 @@ Enable autotuning between the native & triton fusion emitters.
 Maximum number of ROCm trace events (applies to callback/activity/annotation). Set as high as memory allows; up to 1e9.
 
 ## --xla_gpu_experimental_enable_tiling_propagation
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, enable experimental tiling propagation.
@@ -2157,3 +2199,9 @@ If true, uses the cost model to suggest default GEMM tilings when autotuning is 
 - type: **string**
 
 Whitespace-separated extra flags to pass to the ptxas compiler, e.g. '--maxregcount=32'.
+
+## --xla_gpu_experimental_deterministic_ops_triton
+- default: `"off"`
+- type: **string**
+
+Controls whether Triton is enabled when deterministic ops are requested (--xla_gpu_deterministic_ops or --xla_gpu_exclude_nondeterministic_ops). Supported modes: 'off' (default) and 'unchecked' (enables Triton and skips correctness checks).

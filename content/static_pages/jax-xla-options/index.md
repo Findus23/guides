@@ -7,7 +7,7 @@ description: "A list of all XLA options extracted from the latest JAX version"
 ---
 
 Unfortunately the [JAX documentation](https://docs.jax.dev/en/latest/xla_flags.html) only seems to list a few common XLA flags. 
-The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.12.0** (XLA [d8679698](https://github.com/openxla/xla/commit/d867969800d4a8fd045505eabc65e1e66f30794f)).
+The rest of them is not documented at all outside of the OpenXLA source code. Here I am listing all of them as of **JAX/jaxlib 0.12.1** (XLA [97b8433b](https://github.com/openxla/xla/commit/97b8433b3ed82b78b742f751d2c7f510e5d78d25)).
 Keep in mind that most of them are experimental and don't depend on their behaviour to be stable between JAX/XLA versions.
 
 If you are interested in the XLA flags of earlier JAX versions, check out the [older versions of this page](https://github.com/Findus23/guides/commits/main/content/static_pages/jax-xla-options/index.md).
@@ -139,10 +139,10 @@ In LLVM-based backends, enable the emission of !alias.scope metadata in the gene
 In LLVM-based backends, enable the emission of !noalias metadata in the generated IR.
 
 ## --xla_llvm_enable_invariant_load_metadata
-- default: `true`
+- default: `false`
 - type: **bool**
 
-In LLVM-based backends, enable the emission of !invariant.load metadata in the generated IR.
+[Deprecated, do not use]
 
 ## --xla_llvm_disable_expensive_passes
 - default: `false`
@@ -433,7 +433,25 @@ Maximum number of candidate configs considered during autotuning non-gemm fusion
 - default: `0.100000`
 - type: **float**
 
-Relative precision for comparing GEMM solutions vs the reference one
+[Deprecated, use --xla_autotune_rtol instead] Relative precision for comparing GEMM solutions vs the reference one
+
+## --xla_autotune_rtol
+- default: `0.100000`
+- type: **float**
+
+Relative precision for comparing autotuning solutions vs the reference one.
+
+## --xla_gpu_autotune_flush_l2_cache
+- default: `true`
+- type: **bool**
+
+If true, the GPU autotuner flushes the L2 cache before every timed run of a candidate, so that candidates are profiled with operands read from device memory.
+
+## --xla_gpu_autotune_num_timed_runs
+- default: `3`
+- type: **int32**
+
+Number of timed runs of each candidate during GPU autotuning. The mean run time is used to rank the candidates.
 
 ## --xla_force_host_platform_device_count
 - default: `1`
@@ -942,11 +960,23 @@ Register NCCL user buffers in default space with allocator memory registration.
 
 Enables spatial partitioning of the GPU BFC allocator so default and collective allocations share one fixed address range. Requires BFC preallocation.
 
+## --xla_gpu_memory_fraction_policy
+- default: `""`
+- type: **string**
+
+Overrides the client's memory fraction for the GPU BFC allocator, as START, START+, or START-CAP fractions of total device memory: "0.75" is fixed at 75%, "0.75+" preallocates 75% and lets the shared spatial pool grow to all device memory, and "0.75-0.85" caps growth at 85%. Empty keeps the client's setting.
+
 ## --xla_gpu_experimental_enable_nccl_symmetric_buffers
 - default: `false`
 - type: **bool**
 
 Enables NCCL symmetric buffer registration.
+
+## --xla_gpu_experimental_nccl_window_symmetric
+- default: `false`
+- type: **bool**
+
+Registers NCCL windows with NCCL_WIN_COLL_SYMMETRIC instead of NCCL_WIN_DEFAULT.
 
 ## --xla_gpu_experimental_emit_collective_reduce
 - default: `false`
@@ -964,13 +994,25 @@ Enables NCCL symmetric buffer registration for specific collectives and sizes. F
 - default: `false`
 - type: **bool**
 
-Enables temp User Buffer Registration. Enable this flag will use a separate cuda async memory allocator to allocate temp buffer, this will allocate temp buffer to the fixed address on every iteration
+Enables temp User Buffer Registration. Enable this flag will use a separate memory allocator (a CUDA async pool on CUDA, a BFC pool on ROCm) to allocate temp buffer, this will allocate temp buffer to the fixed address on every iteration. Temp buffers then do not come from the default pool: next to a preallocated default pool they must fit in the device memory its memory fraction leaves, which they share with the collective memory pool unless --xla_gpu_enable_allocator_spatial_partitioning puts collective memory in the default pool.
+
+## --xla_gpu_temp_buffer_use_collective_color
+- default: `true`
+- type: **bool**
+
+If true, allocates temporary buffers for fully-sharded modules (modules using all devices in the topology) in the Collective memory space (color 7).
 
 ## --xla_gpu_require_exclusive_lock
 - default: `false`
 - type: **bool**
 
 if true, running gpu executable will require exclusive lock on gpu, so there is no multi thread conlicts on gpu. this can enable some optimizations that reduce the cost of resource management, e.g, command buffer update to ensure correctness when running in multi thread mode.
+
+## --xla_gpu_enable_command_buffer_telemetry
+- default: `false`
+- type: **bool**
+
+Records the HLO annotation of each CUDA graph node so profiles can attribute command buffer kernels, memcpys and memsets to HLO ops. Requires CUDA 13.2+; otherwise it does nothing. Graph nodes appear in a profile only with --xla_enable_command_buffers_during_profiling=true.
 
 ## --xla_gpu_enable_nccl_comm_splitting
 - default: `true`
@@ -1180,7 +1222,7 @@ Enable cuDNN frontend for int8x32 convolutions with reordered filter.
 - default: `true`
 - type: **bool**
 
-Enable experimental rewrite of GEMM fusion pass for Triton.
+Deprecated, do not use.
 
 ## --xla_gpu_triton_gemm_any
 - default: `true`
@@ -1211,19 +1253,37 @@ Enable heroless Triton fusions in the PriorityFusion pass. The pass will try to 
 - default: `""`
 - type: **string**
 
-File to write autotune results to. It will be a binary file unless the name ends with .txt or .textproto. Warning: The results are written at every compilation, possibly multiple times per process. This only works on CUDA. In tests, the TEST_UNDECLARED_OUTPUTS_DIR prefix can be used to write to their output directory.
+[Deprecated, use --xla_dump_autotune_cache_to instead] File to write autotune results to. It will be a binary file unless the name ends with .txt or .textproto. Warning: The results are written at every compilation, possibly multiple times per process. This only works on CUDA. In tests, the TEST_UNDECLARED_OUTPUTS_DIR prefix can be used to write to their output directory.
+
+## --xla_dump_autotune_cache_to
+- default: `""`
+- type: **string**
+
+File to write autotune cache results to. It will be a binary file unless the name ends with .txt or .textproto. Warning: The results are written at every compilation, possibly multiple times per process. In tests, the TEST_UNDECLARED_OUTPUTS_DIR prefix can be used to write to their output directory. If unset, the value of the deprecated --xla_gpu_dump_autotune_results_to is used.
 
 ## --xla_gpu_load_autotune_results_from
 - default: `""`
 - type: **string**
 
-File to load autotune results from. It will be considered a binary file unless the name ends with .txt or .textproto. It will be loaded at most once per process. This only works on CUDA. In tests, the TEST_WORKSPACE prefix can be used to load files from their data dependencies.
+[Deprecated, use --xla_load_autotune_cache_from instead] File to load autotune results from. It will be considered a binary file unless the name ends with .txt or .textproto. It will be loaded at most once per process. This only works on CUDA. In tests, the TEST_WORKSPACE prefix can be used to load files from their data dependencies.
+
+## --xla_load_autotune_cache_from
+- default: `""`
+- type: **string**
+
+File to load autotune cache results from. It will be considered a binary file unless the name ends with .txt or .textproto. It will be loaded at most once per process. In tests, the TEST_WORKSPACE prefix can be used to load files from their data dependencies. If unset, the value of the deprecated --xla_gpu_load_autotune_results_from is used.
 
 ## --xla_gpu_require_complete_aot_autotune_results
 - default: `false`
 - type: **bool**
 
-Whether to require complete AOT autotuning results.
+[Deprecated, use --xla_fail_on_autotune_cache_miss instead] Whether to require complete AOT autotuning results.
+
+## --xla_fail_on_autotune_cache_miss
+- default: `false`
+- type: **bool**
+
+Whether to require complete AOT autotuning results and fail compilation on a cache miss. If unset, the value of the deprecated --xla_gpu_require_complete_aot_autotune_results is used.
 
 ## --xla_gpu_auto_spmd_partitioning_memory_budget_gb
 - default: `0`
@@ -1247,19 +1307,37 @@ Dumps autotuned GEMM fusions to the directory specified by xla_dump_to or stdout
 - default: `false`
 - type: **bool**
 
-Dumps autotuned instructions to the directory specified by xla_dump_to or stdout. Each instruction is dumped only once, as an optimized HLO.
+[Deprecated, use --xla_dump_isolated_hlos_pre_and_post_config_assignment instead] Dumps autotuned instructions to the directory specified by xla_dump_to or stdout. Each instruction is dumped only once, as an optimized HLO.
+
+## --xla_dump_isolated_hlos_pre_and_post_config_assignment
+- default: `false`
+- type: **bool**
+
+Dumps isolated HLO instructions before and after config assignment to the directory specified by xla_dump_to or stdout.
 
 ## --xla_gpu_override_gemm_autotuner
 - default: `""`
 - type: **string**
 
-Overrides the GEMM autotuner to use the specified (AutotuneResult::TritonGemmKey) textproto configuration for all Triton GEMM fusions. (You can get such textprotos from the debug logs of the GEMM autotuner.)
+[Deprecated, use --xla_gpu_override_triton_config instead] Overrides the GEMM autotuner to use the specified (AutotuneResult::TritonGemmKey) textproto configuration for all Triton GEMM fusions. (You can get such textprotos from the debug logs of the GEMM autotuner.) 
+
+## --xla_gpu_override_triton_config
+- default: `""`
+- type: **string**
+
+Overrides the Triton autotuner to use the specified (AutotuneResult::TritonGemmKey) textproto configuration for all Triton GEMM fusions.
 
 ## --xla_gpu_command_buffer_unroll_loops
 - default: `false`
 - type: **bool**
 
 During command buffer lowering, unroll the loop command if loop has known loop count.
+
+## --xla_gpu_command_buffer_keep_collectives_out_of_outputs
+- default: `false`
+- type: **bool**
+
+With COLLECTIVES in xla_gpu_enable_command_buffer and the SKIP_TEMP or SKIP_PROFILED update mode, keeps buffers of collectives that may be recorded into command buffers out of output allocations, so the collectives are not re-recorded on every execution. Costs temp memory.
 
 ## --xla_gpu_copy_insertion_use_region_analysis
 - default: `false`
@@ -1291,6 +1369,12 @@ Whether to allow GEMM fusion autotuning to fall back to cuBLAS when it is faster
 - type: **int32**
 
 cuDNN GEMM fusion level; higher level corresponds to more kinds of fused operations.
+
+## --xla_gpu_cudnn_non_gemm_fusion_level
+- default: `0`
+- type: **int32**
+
+Lets cuDNN compile non-GEMM fusions. Current levels: 0: Disabled. 1: Compile pointwise fusions with cuDNN.
 
 ## --xla_gpu_mock_custom_calls
 - default: `false`
@@ -1387,7 +1471,7 @@ This controls whether to enable windowed einsum (collective matmul) based on the
 - default: `false`
 - type: **bool**
 
-Enabling this flag will attempt to redirect every fusion possible to the Triton emitter
+Deprecated, do not use.
 
 ## --xla_gpu_enable_libnvptxcompiler
 - default: `false`
@@ -1471,6 +1555,12 @@ Memory mode for all-gather: private, symmetric, peer. See CollectivesMode for de
 - default: `""`
 - type: **string**
 
+[Deprecated, use --xla_dump_autotune_logs_to instead] File to write autotune logs to. It will be a binary file unless the name ends with .txt or .textproto.
+
+## --xla_dump_autotune_logs_to
+- default: `""`
+- type: **string**
+
 File to write autotune logs to. It will be a binary file unless the name ends with .txt or .textproto.
 
 ## --xla_reduce_window_rewrite_base_length
@@ -1513,19 +1603,43 @@ Path to a file to cache compiled kernels. Cached kernels get reused in further c
 - default: `""`
 - type: **string**
 
-Experimental: Maintain a per-fusion autotune cache in the given directory. XLA will try to read existing results when they are needed and write new results when they are determined. The directory must exist. Cache invalidation has to be handled by the user (e.g. please use an empty directory if you want to start with an empty cache). XLA version checks must be done by the user (e.g. if you want to use separate caches for different versions of XLA, please use different directories). Default: no cache.
+[Deprecated, use --xla_autotune_cache_dir instead] Maintain a per-fusion autotune cache in the given directory. XLA will try to read existing results when they are needed and write new results when they are determined. The directory must exist. Cache invalidation has to be handled by the user (e.g. please use an empty directory if you want to start with an empty cache). XLA version checks must be done by the user (e.g. if you want to use separate caches for different versions of XLA, please use different directories). Default: no cache.
+
+## --xla_autotune_cache_dir
+- default: `""`
+- type: **string**
+
+Maintain a per-instruction autotune cache in the given directory. XLA will try to read existing results when they are needed and write new results when they are determined. The directory must exist. If unset, the value of the deprecated --xla_gpu_per_fusion_autotune_cache_dir is used. Default: no cache.
 
 ## --xla_gpu_experimental_autotune_cache_mode
 - default: `"AUTOTUNE_CACHE_MODE_UPDATE"`
 - type: **string**
 
-Experimental: Specify the behavior of per kernel autotuning cache. Supported modes: read (provides readonly access to the cache), update (loads if the cache exists, runs autotuning and dumps the result otherwise). Default: update.
+[Deprecated, use --xla_autotune_cache_mode instead] Specify the behavior of per kernel autotuning cache. Supported modes: AUTOTUNE_CACHE_MODE_READ (provides readonly access to the cache), AUTOTUNE_CACHE_MODE_UPDATE (loads if the cache exists, runs autotuning and dumps the result otherwise), AUTOTUNE_CACHE_MODE_WRITE_ONLY (does not read the cache). Default: AUTOTUNE_CACHE_MODE_UPDATE.
+
+## --xla_autotune_cache_mode
+- default: `"AUTOTUNE_CACHE_MODE_UPDATE"`
+- type: **string**
+
+Specify the behavior of the autotuning cache. Supported modes: AUTOTUNE_CACHE_MODE_READ (provides readonly access to the cache), AUTOTUNE_CACHE_MODE_UPDATE (loads if the cache exists, runs autotuning and dumps the result otherwise), AUTOTUNE_CACHE_MODE_WRITE_ONLY (does not read the cache). If unset, the value of the deprecated --xla_gpu_experimental_autotune_cache_mode is used. Default: AUTOTUNE_CACHE_MODE_UPDATE.
 
 ## --xla_gpu_use_new_autotune_cache_format
 - default: `true`
 - type: **bool**
 
 Whether to use the new protos for the autotune cache (xla.autotuner.AutotuneCache rather than xla.AutotuneResults.
+
+## --xla_autotune_cache_require_strict_codegen_match
+- default: `false`
+- type: **bool**
+
+When true, autotune cache lookup requires the entire codegen environment to match. When false, only the codegen version of the optimal backend is required to match (e.g., allowing Triton cached entries to be reused even when the cuDNN version changes).
+
+## --xla_gpu_experimental_use_autotune_cache_also_for_deterministic_ops
+- default: `false`
+- type: **bool**
+
+Experimental: If true, deterministic compilations (xla_gpu_deterministic_ops or xla_gpu_exclude_nondeterministic_ops) also read from the autotune cache, even though cached entries may come from timing-based autotuning in other modules.
 
 ## --xla_compile_all_supported_configs
 - default: `false`
@@ -1552,10 +1666,22 @@ Single serialized config to override config of all instructions, bypassing cache
 File containing a list of serialized configs to override supported configs for all instructions.
 
 ## --xla_gpu_experimental_autotune_backends
-- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU, TENSOR_IR"`
+- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU, TENSOR_IR, CUDNN_FISSION"`
 - type: **string**
 
-Backends to enable for autotuning. Comma-separated (no spaces). Examples:
+[Deprecated, use --xla_config_assigner_backends instead] Backends to enable for autotuning. Comma-separated (no spaces). Examples:
+
+  'cudnn,triton' (overwrites defaults)
+
+  '+cudnn,-cublas' (adds/removes from defaults)
+
+Available: cudnn, triton, cublas, cublaslt etc, check xla.autotuner.Backend for the full list.
+
+## --xla_config_assigner_backends
+- default: `"CUDNN, TRITON, CUBLASLT, HIPBLASLT, MIOPEN, CUSTOM_KERNEL, BLOCK_LEVEL_EMITTER, NATIVE_EMITTER, LLVM_KERNEL_EMITTER, CUBLASLT_FISSION, CUSTOM_KERNEL_FISSION, HIPBLASLT_FISSION, YNNPACK, BLOCK_LEVEL_EMITTER_CPU, TENSOR_IR, CUDNN_FISSION"`
+- type: **string**
+
+Backends to enable for config assignment / autotuning. Comma-separated (no spaces). Examples:
 
   'cudnn,triton' (overwrites defaults)
 
@@ -1579,7 +1705,13 @@ Experimental: If true, autotune all fusions with block level emitter.
 - default: `""`
 - type: **string**
 
-A textproto file to override autotune results. See also `xla_gpu_override_gemm_autotuner` to override with a single config.
+[Deprecated, use --xla_gpu_override_triton_configs_file instead] A textproto file to override autotune results. See also `xla_gpu_override_triton_config` to override with a single config.
+
+## --xla_gpu_override_triton_configs_file
+- default: `""`
+- type: **string**
+
+A textproto file to override Triton configs considered by the autotuner. See also `xla_gpu_override_triton_config` to override with a single config.
 
 ## --xla_enable_command_buffers_during_profiling
 - default: `false`
@@ -1757,7 +1889,7 @@ When enabled, the GPU latency hiding scheduler selectively overlaps async device
 This controls how many in-flight asynchronous computations latency hiding scheduler can schedule.
 
 ## --xla_gpu_experimental_scheduler_memory_fencing_threshold_bytes
-- default: `-1`
+- default: `0`
 - type: **int64**
 
 Buffers of at least this size in bytes are fenced by the SchedulerMemoryFencing pass. -1 disables the pass, 0 uses 1% of the scheduler memory limit, and positive values are capped at the scheduler memory limit.
@@ -1967,7 +2099,7 @@ Size in bytes of the scratch buffer for GXL collectives.
 If true, allows skipping defensive copy insertion for S(1) collective memory parameters that have input-output aliasing and execute on all available devices in the topology.
 
 ## --xla_gpu_experimental_enable_raft_for_stable_topk
-- default: `false`
+- default: `true`
 - type: **bool**
 
 If true, enables RAFT for stable TopK.
@@ -1977,6 +2109,18 @@ If true, enables RAFT for stable TopK.
 - type: **bool**
 
 If true, the GPU autotuner may assign fusions to the experimental TensorIR (CUDA Tile) emitter. Requires sm_90+ and CUDA 13.3+ (tileiras).
+
+## --xla_gpu_experimental_enable_triton_scan
+- default: `true`
+- type: **bool**
+
+If true, lowers eligible associative kScan instructions to Triton fusions (ScanRewriterTriton).
+
+## --xla_gpu_experimental_multi_phase_fusion
+- default: `false`
+- type: **bool**
+
+If true, fuses dependent small fusions into nested fusions. Nested fusions are emitted as a sequence of phases of a single kernel. Phases exchange data via HBM or caches and synchronize with block cluster barriers.
 
 ## --xla_gpu_experimental_ragged_all_to_all_use_device_kernel
 - default: `false`
@@ -1989,6 +2133,12 @@ If true, use the device-initiated (NCCL GIN + LSA) kernel for ragged-all-to-all.
 - type: **bool**
 
 If true, allow fallback to NCCL Send/Recv path for ragged-all-to-all.
+
+## --xla_gpu_experimental_ragged_all_to_all_fabric_cost_weight
+- default: `0.220000`
+- type: **float**
+
+Weight applied to the (hbm_bw / fabric_bw) ratio when scoring remote writes for per-CTA scheduling in the ragged-all-to-all device kernel (0.0-1.0). Higher value => higher remote-write cost => more CTAs on remote work. Out-of-range values use the default (0.22, fitted on GB200).
 
 ## --xla_gpu_async_copy_min_bytes
 - default: `-1`
@@ -2120,7 +2270,13 @@ Maximum number of ROCm trace events (applies to callback/activity/annotation). S
 - default: `true`
 - type: **bool**
 
-If true, enable experimental tiling propagation.
+Deprecated, do not use.
+
+## --xla_gpu_experimental_enable_reduction_dimension_tiling
+- default: `false`
+- type: **bool**
+
+If true, the block-level (Triton) tiling search also enumerates tile sizes for reduction dimensions.
 
 ## --xla_gpu_detect_nan
 - default: `"DETECTION_MODE_NONE"`
@@ -2205,3 +2361,15 @@ Whitespace-separated extra flags to pass to the ptxas compiler, e.g. '--maxregco
 - type: **string**
 
 Controls whether Triton is enabled when deterministic ops are requested (--xla_gpu_deterministic_ops or --xla_gpu_exclude_nondeterministic_ops). Supported modes: 'off' (default) and 'unchecked' (enables Triton and skips correctness checks).
+
+## --xla_gpu_require_exact_blas_lt_algorithm
+- default: `false`
+- type: **bool**
+
+If true, require that BlasLt matmuls execute the exact algorithm described by BlasLtMatmulAlgorithmProto rather than falling back to the heuristic algorithm index.
+
+## --xla_gpu_experimental_enable_horizontal_fusion
+- default: `false`
+- type: **bool**
+
+Enable experimental thread-block specialized horizontal fusion of independent small-grid GPU kernels.
